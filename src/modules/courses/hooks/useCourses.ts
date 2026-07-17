@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { courseService, studentService, Student, Course } from "../../shared/services/firebase";
-import * as XLSX from "xlsx";
+import { parseExcelOrJsonFile } from "../../shared/utils/fileParser";
 
 export const useCourses = () => {
   const [loading, setLoading] = useState(false);
@@ -72,60 +72,22 @@ export const useCourses = () => {
   };
 
   // Lógica para analizar y procesar el archivo (JSON o XLSX)
-  const processImportFile = (file: File, courseId: string): Promise<Omit<Student, "role" | "projectId">[]> => {
-    return new Promise((resolve, reject) => {
-      const extension = file.name.split(".").pop()?.toLowerCase();
-      const reader = new FileReader();
-
-      if (extension === "json") {
-        reader.onload = (e) => {
-          try {
-            const json = JSON.parse(e.target?.result as string);
-            const array = Array.isArray(json) ? json : [json];
-            
-            // Validaciones y normalización
-            const students = validateAndFormatStudents(array, courseId);
-            resolve(students);
-          } catch (err: any) {
-            reject(new Error("Error al analizar archivo JSON: " + err.message));
-          }
-        };
-        reader.onerror = () => reject(new Error("Error al leer el archivo JSON"));
-        reader.readAsText(file);
-      } else if (extension === "xlsx" || extension === "xls") {
-        reader.onload = (e) => {
-          try {
-            const data = new Uint8Array(e.target?.result as ArrayBuffer);
-            const workbook = XLSX.read(data, { type: "array" });
-            const sheetName = workbook.SheetNames[0];
-            const worksheet = workbook.Sheets[sheetName];
-            const rawRows = XLSX.utils.sheet_to_json(worksheet);
-            
-            // Validaciones y normalización
-            const students = validateAndFormatStudents(rawRows, courseId);
-            resolve(students);
-          } catch (err: any) {
-            reject(new Error("Error al analizar archivo Excel: " + err.message));
-          }
-        };
-        reader.onerror = () => reject(new Error("Error al leer el archivo Excel"));
-        reader.readAsArrayBuffer(file);
-      } else {
-        reject(new Error("Formato de archivo no soportado. Suba un archivo .json o .xlsx"));
-      }
-    });
+  const processImportFile = async (file: File, courseId: string): Promise<Omit<Student, "role" | "projectId">[]> => {
+    const rawRows = await parseExcelOrJsonFile(file);
+    return validateAndFormatStudents(rawRows, courseId);
   };
 
   // Función interna para validar campos obligatorios
   const validateAndFormatStudents = (rows: any[], courseId: string): Omit<Student, "role" | "projectId">[] => {
     return rows.map((row, index) => {
-      const nombre = row.nombre_completo || row.nombre || row.NombreCompleto;
-      const correo = row.correo_institucional || row.correo || row.email || row.Email;
-      const codigo = row.codigo_estudiante || row.codigo || row.code || row.CodigoEstudiante;
+      const nombre = row.nombre_completo || row["nombre Completo"] || row.nombre || row.NombreCompleto;
+      const correo = row.correo_electronico || row["Correo Electrónico"] || row.correo_institucional || row.correo || row.email || row.Email;
+      const codigo = row.documento_identidad || row["Documento de identidad"] || row.codigo_estudiante || row.codigo || row.code || row.CodigoEstudiante;
+      const celular = row.celular || row["Celular"] || row.telefono || row.Telefono || row.phone || row.Phone || "";
 
       if (!nombre || !correo || !codigo) {
         throw new Error(
-          `Fila ${index + 1} inválida. Los campos obligatorios son: nombre_completo, correo_institucional, codigo_estudiante.`
+          `Fila ${index + 1} inválida. Los campos obligatorios son: 'nombre_completo', 'correo_electronico' y 'documento_identidad'.`
         );
       }
 
@@ -140,6 +102,7 @@ export const useCourses = () => {
         nombre_completo: String(nombre).trim(),
         correo_institucional: String(correo).trim().toLowerCase(),
         codigo_estudiante: String(codigo).trim(),
+        telefono: String(celular).trim(),
         courseId,
       };
     });

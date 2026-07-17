@@ -29,6 +29,7 @@ import {
   Upload,
   Download
 } from "lucide-react";
+import { toast } from "sonner";
 
 export const KanbanBoard: React.FC = () => {
   const { currentUser } = useAuth();
@@ -253,11 +254,11 @@ export const KanbanBoard: React.FC = () => {
 
     // Validaciones locales rápidas
     if (targetStatus === "Completado" && currentUser.role !== "docente" && currentUser.role !== "admin") {
-      alert("Acción denegada: Solo el Docente puede aprobar y mover tarjetas a 'Completado'.");
+      toast.error("Acción denegada: Solo el Docente puede aprobar y mover tarjetas a 'Completado'.");
       return;
     }
     if (targetStatus === "En Progreso" && !task.assignedTo) {
-      alert("Acción denegada: No se puede mover a 'En Progreso' sin un integrante asignado.");
+      toast.error("Acción denegada: No se puede mover a 'En Progreso' sin un integrante asignado.");
       return;
     }
 
@@ -459,7 +460,7 @@ export const KanbanBoard: React.FC = () => {
 
         const importedData = JSON.parse(text);
         if (!Array.isArray(importedData)) {
-          alert("Error: El archivo JSON debe ser una lista de Historias de Usuario.");
+          toast.error("Error: El archivo JSON debe ser una lista de Historias de Usuario.");
           return;
         }
 
@@ -519,11 +520,11 @@ export const KanbanBoard: React.FC = () => {
           }
         }
 
-        alert(`Éxito: Se importaron ${importCount} HUs con ${criteriaCount} criterios de aceptación.`);
+        toast.success(`Éxito: Se importaron ${importCount} HUs con ${criteriaCount} criterios de aceptación.`);
         loadBoardData();
       } catch (err) {
         console.error("Error al importar JSON:", err);
-        alert("Error al procesar el archivo JSON. Verifique el formato.");
+        toast.error("Error al procesar el archivo JSON. Verifique el formato.");
       }
     };
     reader.readAsText(file);
@@ -542,13 +543,13 @@ export const KanbanBoard: React.FC = () => {
       {/* Controles de Selección de Proyecto */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-white/5 pb-4">
         <div>
-          <h2 className="text-xl font-bold text-white flex items-center gap-2">
+          <h2 className="text-xl font-bold text-zinc-100 flex items-center gap-2">
             <Briefcase className="w-5 h-5 text-brand-purple" />
-            Planificación y Control Ágil (HUs)
+            {activeProject ? activeProject.name : "Planificación y Control Ágil (HUs)"}
           </h2>
-          <p className="text-xs text-gray-400">
-            {currentUser?.role === "estudiante"
-              ? `Proyecto: ${activeProject?.name || "Cargando..."}`
+          <p className="text-xs text-zinc-400">
+            {activeProject
+              ? "Tablero Kanban de Planificación y Control de Historias de Usuario"
               : "Selecciona el proyecto del curso que deseas auditar y calificar."}
           </p>
         </div>

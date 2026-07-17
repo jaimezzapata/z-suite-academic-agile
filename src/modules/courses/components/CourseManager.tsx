@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import { useDashboard } from "../../shared/components/Layout";
 import { useCourses } from "../hooks/useCourses";
 import { Course } from "../../shared/services/firebase";
+import { ConfirmDialog } from "../../shared/components/ConfirmDialog";
 import {
   Plus,
   GraduationCap,
@@ -20,6 +21,8 @@ import {
 export const CourseManager: React.FC = () => {
   const { selectedCourse, setSelectedCourse, courses, refreshCourses } = useDashboard();
   const { createCourse, updateCourse, deleteCourse, error: courseError } = useCourses();
+
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
   // Estados para Modal de Creación
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -105,24 +108,9 @@ export const CourseManager: React.FC = () => {
     }
   };
 
-  const handleDeleteClick = async (e: React.MouseEvent, courseId: string) => {
+  const handleDeleteClick = (e: React.MouseEvent, courseId: string) => {
     e.stopPropagation(); // Evitar seleccionar el curso al hacer clic en borrar
-    if (
-      !confirm(
-        "¿Está seguro de que desea eliminar este curso? Se borrarán en cascada permanentemente todos los estudiantes matriculados, grupos y tableros Kanban de este curso."
-      )
-    ) {
-      return;
-    }
-
-    const success = await deleteCourse(courseId);
-    if (success) {
-      await refreshCourses();
-      // Si el curso borrado era el seleccionado, limpiar selección
-      if (selectedCourse?.id === courseId) {
-        setSelectedCourse(null);
-      }
-    }
+    setConfirmDeleteId(courseId);
   };
 
   return (
@@ -508,6 +496,28 @@ export const CourseManager: React.FC = () => {
           </div>
         </div>
       )}
+
+      <ConfirmDialog
+        isOpen={!!confirmDeleteId}
+        title="Eliminar Curso"
+        message="¿Está seguro de que desea eliminar este curso? Se borrarán en cascada permanentemente todos los estudiantes matriculados, grupos y tableros Kanban de este curso."
+        confirmText="Eliminar"
+        cancelText="Cancelar"
+        isDanger={true}
+        onConfirm={async () => {
+          if (confirmDeleteId) {
+            const success = await deleteCourse(confirmDeleteId);
+            if (success) {
+              await refreshCourses();
+              if (selectedCourse?.id === confirmDeleteId) {
+                setSelectedCourse(null);
+              }
+            }
+            setConfirmDeleteId(null);
+          }
+        }}
+        onCancel={() => setConfirmDeleteId(null)}
+      />
     </div>
   );
 };

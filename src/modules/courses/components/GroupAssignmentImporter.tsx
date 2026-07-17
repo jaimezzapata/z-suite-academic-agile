@@ -1,17 +1,17 @@
 "use client";
 
-import React, { useState, useRef, useEffect } from "react";
-import { useCourses } from "../hooks/useCourses";
-import { studentService, Student } from "../../shared/services/firebase";
-import { FileUp, FileJson, AlertCircle, CheckCircle, HelpCircle } from "lucide-react";
+import React, { useState, useRef } from "react";
+import { useProjects } from "../../projects/hooks/useProjects";
+import { FileUp, AlertCircle, CheckCircle, HelpCircle } from "lucide-react";
+import { toast } from "sonner";
 
-interface StudentImporterProps {
+interface GroupAssignmentImporterProps {
   courseId: string;
   onImportSuccess: () => void;
 }
 
-export const StudentImporter: React.FC<StudentImporterProps> = ({ courseId, onImportSuccess }) => {
-  const { loading, error, importStudents } = useCourses();
+export const GroupAssignmentImporter: React.FC<GroupAssignmentImporterProps> = ({ courseId, onImportSuccess }) => {
+  const { importGroupAssignments, loading, error } = useProjects();
   const [dragActive, setDragActive] = useState(false);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [showTemplateInfo, setShowTemplateInfo] = useState(false);
@@ -45,11 +45,18 @@ export const StudentImporter: React.FC<StudentImporterProps> = ({ courseId, onIm
 
   const handleFile = async (file: File) => {
     setSuccessMsg(null);
-    const success = await importStudents(file, courseId);
-    if (success) {
-      setSuccessMsg(`¡Estudiantes importados con éxito desde ${file.name}!`);
-      onImportSuccess();
-      if (fileInputRef.current) fileInputRef.current.value = "";
+    try {
+      const success = await importGroupAssignments(file, courseId);
+      if (success) {
+        toast.success(`¡Asignaciones de grupo cargadas con éxito desde ${file.name}!`);
+        setSuccessMsg(`¡Asignaciones de grupo cargadas con éxito desde ${file.name}!`);
+        onImportSuccess();
+        if (fileInputRef.current) fileInputRef.current.value = "";
+      } else {
+        toast.error("Error al importar asignaciones de grupo.");
+      }
+    } catch (err: any) {
+      toast.error(err.message || "Error al importar archivo de asignación.");
     }
   };
 
@@ -61,8 +68,8 @@ export const StudentImporter: React.FC<StudentImporterProps> = ({ courseId, onIm
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-          <h3 className="text-base font-bold text-zinc-800 dark:text-zinc-100">Importar Estudiantes (Matrícula)</h3>
-          <p className="text-xs text-zinc-500 dark:text-zinc-400">Carga estudiantes masivamente en este curso mediante archivos Excel o JSON.</p>
+          <h3 className="text-base font-bold text-zinc-800 dark:text-zinc-100">Importar Asignaciones de Grupos</h3>
+          <p className="text-xs text-zinc-550 dark:text-zinc-400">Asigne estudiantes a grupos de trabajo de forma masiva mediante archivos Excel o JSON.</p>
         </div>
         <button
           onClick={() => setShowTemplateInfo(!showTemplateInfo)}
@@ -77,13 +84,12 @@ export const StudentImporter: React.FC<StudentImporterProps> = ({ courseId, onIm
         <div className="p-4 bg-zinc-950 border border-zinc-800 rounded-xl space-y-3 shadow-xs animate-slide-down">
           <p className="text-xs font-semibold text-zinc-800 dark:text-zinc-100">Estructura de Columnas Requerida:</p>
           <p className="text-xs text-zinc-550 dark:text-zinc-400 leading-relaxed">
-            El archivo debe contener exactamente las siguientes columnas (Excel) o claves (JSON):
+            El archivo de asignación de grupos debe contener las siguientes columnas (Excel) o claves (JSON):
           </p>
           <ul className="text-xs text-zinc-650 dark:text-zinc-400 list-disc pl-5 space-y-1">
-            <li><code className="text-brand-purple font-semibold">nombre_completo</code>: Nombre completo del estudiante (Ej: Ana Torres)</li>
-            <li><code className="text-brand-purple font-semibold">correo_electronico</code>: Email del estudiante (Ej: atorres@univ.edu)</li>
-            <li><code className="text-brand-purple font-semibold">documento_identidad</code>: Documento o código de estudiante (Ej: 102638210)</li>
-            <li><code className="text-brand-purple font-semibold">celular</code> (Opcional): Número de teléfono móvil (Ej: 3004829102)</li>
+            <li><code className="text-brand-purple font-semibold">documento_identidad</code>: Identificación o código único del estudiante matriculado (Ej: 102638210)</li>
+            <li><code className="text-brand-purple font-semibold">nombre_grupo</code>: Nombre del grupo al que se asignará (Ej: Grupo A). Si el grupo no existe, se creará automáticamente.</li>
+            <li><code className="text-brand-purple font-semibold">limite_integrantes</code> (Opcional): Capacidad máxima de miembros del grupo (Ej: 5). Por defecto es 5 si se crea el grupo.</li>
           </ul>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
@@ -92,10 +98,14 @@ export const StudentImporter: React.FC<StudentImporterProps> = ({ courseId, onIm
               <pre className="text-[10px] bg-zinc-950 p-2.5 rounded-lg border border-zinc-800 text-brand-purple overflow-x-auto shadow-xs">
 {`[
   {
-    "nombre_completo": "Ana Torres",
-    "correo_electronico": "atorres@univ.edu",
     "documento_identidad": "102638210",
-    "celular": "3004829102"
+    "nombre_grupo": "Grupo de Trabajo A",
+    "limite_integrantes": 4
+  },
+  {
+    "documento_identidad": "202610992",
+    "nombre_grupo": "Grupo de Trabajo A",
+    "limite_integrantes": 4
   }
 ]`}
               </pre>
@@ -105,18 +115,21 @@ export const StudentImporter: React.FC<StudentImporterProps> = ({ courseId, onIm
               <table className="text-[10px] w-full border border-zinc-800 bg-zinc-950 rounded-lg text-zinc-650 dark:text-zinc-400 overflow-hidden shadow-xs">
                 <thead className="bg-zinc-900/50 text-zinc-850 dark:text-zinc-100">
                   <tr>
-                    <th className="p-1 border border-zinc-800 text-left">nombre_completo</th>
-                    <th className="p-1 border border-zinc-800 text-left">correo_electronico</th>
                     <th className="p-1 border border-zinc-800 text-left">documento_identidad</th>
-                    <th className="p-1 border border-zinc-800 text-left">celular</th>
+                    <th className="p-1 border border-zinc-800 text-left">nombre_grupo</th>
+                    <th className="p-1 border border-zinc-800 text-left">limite_integrantes</th>
                   </tr>
                 </thead>
                 <tbody>
                   <tr className="border-b border-zinc-800 last:border-0">
-                    <td className="p-1 border border-zinc-800 bg-zinc-950 text-zinc-700 dark:text-zinc-300">Ana Torres</td>
-                    <td className="p-1 border border-zinc-800 bg-zinc-950 text-zinc-700 dark:text-zinc-300">atorres@univ.edu</td>
                     <td className="p-1 border border-zinc-800 bg-zinc-950 text-zinc-700 dark:text-zinc-300">102638210</td>
-                    <td className="p-1 border border-zinc-800 bg-zinc-950 text-zinc-700 dark:text-zinc-300">3004829102</td>
+                    <td className="p-1 border border-zinc-800 bg-zinc-950 text-zinc-700 dark:text-zinc-300">Grupo de Trabajo A</td>
+                    <td className="p-1 border border-zinc-800 bg-zinc-950 text-zinc-700 dark:text-zinc-300">4</td>
+                  </tr>
+                  <tr className="border-b border-zinc-800 last:border-0">
+                    <td className="p-1 border border-zinc-800 bg-zinc-950 text-zinc-700 dark:text-zinc-300">202610992</td>
+                    <td className="p-1 border border-zinc-800 bg-zinc-950 text-zinc-700 dark:text-zinc-300">Grupo de Trabajo A</td>
+                    <td className="p-1 border border-zinc-800 bg-zinc-950 text-zinc-700 dark:text-zinc-300">4</td>
                   </tr>
                 </tbody>
               </table>
@@ -152,9 +165,9 @@ export const StudentImporter: React.FC<StudentImporterProps> = ({ courseId, onIm
 
         <div>
           <p className="text-sm font-semibold text-zinc-800 dark:text-zinc-100">
-            Arrastra tu archivo aquí o <span className="text-brand-purple">selecciona archivo</span>
+            {loading ? "Procesando archivo..." : "Arrastra tu archivo aquí o"} <span className="text-brand-purple">selecciona archivo</span>
           </p>
-          <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">Soporta Excel (.xlsx, .xls) y JSON (.json)</p>
+          <p className="text-xs text-zinc-550 dark:text-zinc-400 mt-1">Soporta Excel (.xlsx, .xls) y JSON (.json)</p>
         </div>
       </div>
 

@@ -5,12 +5,15 @@ import { useDashboard } from "../../shared/components/Layout";
 import { useProjects } from "../../projects/hooks/useProjects";
 import { useCourses } from "../hooks/useCourses";
 import { StudentImporter } from "./StudentImporter";
+import { GroupAssignmentImporter } from "./GroupAssignmentImporter";
+
 import {
   studentService,
   projectService,
   Student,
   Project
 } from "../../shared/services/firebase";
+import { ConfirmDialog } from "../../shared/components/ConfirmDialog";
 import {
   Unlock,
   Lock,
@@ -38,10 +41,12 @@ export const EnrollmentManager: React.FC = () => {
   const { moveStudent } = useProjects();
 
   const [students, setStudents] = useState<Student[]>([]);
+  const [confirmDeleteProjectId, setConfirmDeleteProjectId] = useState<string | null>(null);
   const [projects, setProjects] = useState<Project[]>([]);
   const [loadingAutoComplete, setLoadingAutoComplete] = useState(false);
   const [autoCompleteError, setAutoCompleteError] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
+  const [showAssignmentImporter, setShowAssignmentImporter] = useState(false);
 
   // Proyecto seleccionado para ventana modal de matriculación
   const [selectedProjectForModal, setSelectedProjectForModal] = useState<Project | null>(null);
@@ -119,8 +124,11 @@ export const EnrollmentManager: React.FC = () => {
   };
 
   // Eliminar Grupo
-  const handleDeleteProject = async (projectId: string) => {
-    if (!confirm("¿Está seguro de que desea eliminar este grupo? Todos los estudiantes asignados a él volverán a estar rezagados.")) return;
+  const handleDeleteProject = (projectId: string) => {
+    setConfirmDeleteProjectId(projectId);
+  };
+
+  const executeDeleteProject = async (projectId: string) => {
     try {
       await projectService.deleteProject(projectId);
       loadData();
@@ -156,15 +164,15 @@ export const EnrollmentManager: React.FC = () => {
     return acc + (freeSlots > 0 ? freeSlots : 0);
   }, 0);
 
-  const canCloseInscriptions = totalAvailableSlots >= laggingStudents.length;
+  const canAutoComplete = totalAvailableSlots > 0;
 
   const handleAutoComplete = async () => {
     if (!selectedCourse) return;
     setAutoCompleteError(null);
 
-    if (!canCloseInscriptions) {
+    if (!canAutoComplete) {
       setAutoCompleteError(
-        "No es posible cerrar las inscripciones. Los proyectos creados no tienen suficiente capacidad total para albergar a los estudiantes rezagados restantes. Por favor, incremente los límites de capacidad o cree nuevos proyectos vacíos."
+        "No hay cupos disponibles en los grupos existentes para realizar la asignación."
       );
       return;
     }
@@ -241,31 +249,55 @@ export const EnrollmentManager: React.FC = () => {
           {selectedCourse.inscriptionsStatus === "open" ? (
             <button
               onClick={() => handleToggleInscriptions("closed")}
-              className="px-2.5 py-1.5 bg-zinc-800 hover:bg-zinc-750 border border-white/5 rounded-xl text-[11px] font-semibold text-gray-200 transition-all cursor-pointer"
+              className="px-2.5 py-1.5 bg-brand-rose/10 hover:bg-brand-rose/15 border border-brand-rose/25 text-brand-rose rounded-xl text-[11px] font-semibold transition-all cursor-pointer"
             >
               Cerrar Inscripción
             </button>
           ) : (
             <button
               onClick={() => handleToggleInscriptions("open")}
-              className="px-2.5 py-1.5 bg-brand-emerald text-white rounded-xl text-[11px] font-semibold hover:bg-brand-emerald/90 transition-all cursor-pointer shadow-md shadow-brand-emerald/20"
+              className="px-2.5 py-1.5 bg-brand-emerald/10 hover:bg-brand-emerald/15 border border-brand-emerald/25 text-brand-emerald rounded-xl text-[11px] font-semibold transition-all cursor-pointer"
             >
               Abrir Inscripción
             </button>
           )}
 
-          {selectedCourse.inscriptionsStatus === "open" && laggingStudents.length > 0 && (
+          {laggingStudents.length > 0 && (
             <button
-              disabled={loadingAutoComplete || !canCloseInscriptions}
+              disabled={loadingAutoComplete || !canAutoComplete}
               onClick={handleAutoComplete}
-              className="flex items-center gap-1 px-2.5 py-1.5 bg-white text-black text-[11px] font-bold rounded-xl hover:bg-gray-200 disabled:opacity-50 transition-all cursor-pointer shadow-md"
+              className="flex items-center gap-1.5 px-2.5 py-1.5 bg-brand-blue/10 hover:bg-brand-blue/15 border border-brand-blue/20 text-brand-blue text-[11px] font-bold rounded-xl disabled:opacity-50 transition-all cursor-pointer shadow-xs"
+              title="Asigna aleatoriamente los estudiantes restantes a los cupos vacíos"
             >
-              <Sparkles className="w-3 h-3" />
-              {loadingAutoComplete ? "Asignando..." : "Auto-completar"}
+              <Sparkles className="w-3 h-3 text-brand-blue" />
+              {loadingAutoComplete ? "Matriculando..." : "Matrícula Automática"}
             </button>
           )}
+
+          <button
+            onClick={() => setShowAssignmentImporter(!showAssignmentImporter)}
+            className={`px-2.5 py-1.5 border rounded-xl text-[11px] font-semibold transition-all cursor-pointer ${
+              showAssignmentImporter
+                ? "bg-brand-purple text-white border-brand-purple shadow-xs shadow-brand-purple/20"
+                : "bg-zinc-950 hover:bg-zinc-900 border border-zinc-800 text-zinc-650 dark:text-zinc-300"
+            }`}
+          >
+            {showAssignmentImporter ? "Ocultar Carga Masiva" : "Carga Masiva (Excel / JSON)"}
+          </button>
         </div>
       </div>
+
+      {showAssignmentImporter && (
+        <div className="p-4 bg-zinc-950 border border-zinc-800 rounded-2xl shadow-sm animate-slide-down">
+          <GroupAssignmentImporter
+            courseId={selectedCourse.id}
+            onImportSuccess={() => {
+              loadData();
+              setShowAssignmentImporter(false);
+            }}
+          />
+        </div>
+      )}
 
       {actionError && (
         <div className="p-3 bg-brand-rose/10 border border-brand-rose/20 text-brand-rose rounded-xl text-xs flex items-center gap-2 animate-slide-up">
@@ -475,12 +507,12 @@ export const EnrollmentManager: React.FC = () => {
             <div className="flex-1 p-6 overflow-hidden flex flex-col gap-5">
               {/* Sección Superior: Integrantes actuales del Grupo (Horizontal badges) */}
               <div className="flex-shrink-0">
-                <p className="text-[10px] text-gray-500 uppercase font-bold tracking-wider mb-2">
+                <p className="text-[10px] text-zinc-400 uppercase font-bold tracking-wider mb-2">
                   Integrantes Actuales ({selectedProjectForModal.members.length})
                 </p>
-                <div className="flex flex-wrap gap-2 p-3 bg-zinc-950 border border-white/5 rounded-xl min-h-[50px] max-h-[85px] overflow-y-auto custom-scrollbar">
+                <div className="flex flex-wrap gap-2 p-3 bg-zinc-950 border border-zinc-800 rounded-xl min-h-[50px] max-h-[85px] overflow-y-auto custom-scrollbar">
                   {selectedProjectForModal.members.length === 0 ? (
-                    <p className="text-xs text-gray-500 italic py-1">Sin integrantes asignados. Haz clic en los alumnos disponibles abajo para agregarlos.</p>
+                    <p className="text-xs text-zinc-400 italic py-1">Sin integrantes asignados. Haz clic en los alumnos disponibles abajo para agregarlos.</p>
                   ) : (
                     selectedProjectForModal.members.map((memberId) => {
                       const st = students.find((s) => s.id === memberId);
@@ -506,8 +538,8 @@ export const EnrollmentManager: React.FC = () => {
 
               {/* Sección Inferior: Listado de Estudiantes Disponibles (CUADRÍCULA RESPONSIVA MULTI-COLUMNA) */}
               <div className="flex-1 flex flex-col overflow-hidden">
-                <div className="flex justify-between items-center border-b border-white/5 pb-2 mb-3">
-                  <p className="text-[10px] text-gray-500 uppercase font-bold tracking-wider">
+                <div className="flex justify-between items-center border-b border-zinc-800 pb-2 mb-3">
+                  <p className="text-[10px] text-zinc-400 uppercase font-bold tracking-wider">
                     Estudiantes Disponibles para Matricular ({filteredAvailableStudents.length})
                   </p>
                   <input
@@ -515,16 +547,16 @@ export const EnrollmentManager: React.FC = () => {
                     placeholder="Buscar estudiante disponible..."
                     value={searchAvailableQuery}
                     onChange={(e) => setSearchAvailableQuery(e.target.value)}
-                    className="text-xs bg-zinc-950 border border-white/5 text-gray-200 rounded-lg px-3 py-1.5 focus:outline-none focus:border-white placeholder-gray-600 w-64"
+                    className="text-xs bg-zinc-950 border border-zinc-800 text-zinc-100 rounded-lg px-3 py-1.5 focus:outline-none focus:border-brand-purple placeholder-zinc-500 w-64"
                   />
                 </div>
 
                 <div className="flex-1 overflow-y-auto pr-1 custom-scrollbar">
                   {filteredAvailableStudents.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center py-12 text-center text-gray-500 border border-dashed border-white/5 rounded-xl h-full">
-                      <Users className="w-8 h-8 text-gray-700 mb-2 animate-pulse" />
-                      <p className="text-xs font-semibold text-white">No hay alumnos disponibles</p>
-                      <p className="text-[10px] text-gray-400 mt-1">Todos los alumnos del curso ya pertenecen a un grupo o no coinciden con la búsqueda.</p>
+                    <div className="flex flex-col items-center justify-center py-12 text-center text-zinc-400 border border-dashed border-zinc-800 rounded-xl h-full">
+                      <Users className="w-8 h-8 text-zinc-500 mb-2 animate-pulse" />
+                      <p className="text-xs font-semibold text-zinc-100">No hay alumnos disponibles</p>
+                      <p className="text-[10px] text-zinc-450 mt-1">Todos los alumnos del curso ya pertenecen a un grupo o no coinciden con la búsqueda.</p>
                     </div>
                   ) : (
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
@@ -538,15 +570,15 @@ export const EnrollmentManager: React.FC = () => {
                                 handleAddStudent(student.id, selectedProjectForModal.id);
                               }
                             }}
-                            className={`p-2.5 bg-white/2 border rounded-xl hover:border-brand-purple/40 hover:bg-brand-purple/5 transition-all text-left flex flex-col justify-between h-[65px] select-none group relative ${
-                              isFull ? "opacity-45 cursor-not-allowed border-white/2" : "border-white/5 cursor-pointer"
+                            className={`p-2.5 bg-white/5 border rounded-xl hover:border-brand-purple/40 hover:bg-brand-purple/5 transition-all text-left flex flex-col justify-between min-h-[76px] select-none group relative ${
+                              isFull ? "opacity-40 cursor-not-allowed border-zinc-800" : "border-zinc-800 cursor-pointer"
                             }`}
                           >
                             <div className="truncate">
                               <p className="font-semibold text-white truncate text-[11px] group-hover:text-brand-purple transition-all">
                                 {student.nombre_completo}
                               </p>
-                              <p className="text-[9px] text-gray-500 mt-0.5">CC: {student.codigo_estudiante}</p>
+                              <p className="text-[9px] text-zinc-400 mt-0.5">CC: {student.codigo_estudiante}</p>
                             </div>
                             <div className="flex justify-end mt-1">
                               <span className="text-[8px] text-brand-purple font-bold opacity-0 group-hover:opacity-100 transition-all flex items-center gap-0.5">
@@ -564,6 +596,22 @@ export const EnrollmentManager: React.FC = () => {
           </div>
         </div>
       )}
+
+      <ConfirmDialog
+        isOpen={!!confirmDeleteProjectId}
+        title="Eliminar Grupo"
+        message="¿Está seguro de que desea eliminar este grupo? Todos los estudiantes asignados a él volverán a estar rezagados."
+        confirmText="Eliminar"
+        cancelText="Cancelar"
+        isDanger={true}
+        onConfirm={async () => {
+          if (confirmDeleteProjectId) {
+            await executeDeleteProject(confirmDeleteProjectId);
+            setConfirmDeleteProjectId(null);
+          }
+        }}
+        onCancel={() => setConfirmDeleteProjectId(null)}
+      />
     </div>
   );
 };
@@ -576,6 +624,7 @@ export const StudentRegistry: React.FC = () => {
 
   const [students, setStudents] = useState<Student[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
+  const [confirmDeleteStudentId, setConfirmDeleteStudentId] = useState<string | null>(null);
   const [showImporter, setShowImporter] = useState(false);
   const [searchStudentQuery, setSearchStudentQuery] = useState("");
   const [actionError, setActionError] = useState<string | null>(null);
@@ -609,8 +658,11 @@ export const StudentRegistry: React.FC = () => {
   }, [selectedCourse]);
 
   // Eliminar Estudiante
-  const handleDeleteStudent = async (studentId: string) => {
-    if (!confirm("¿Está seguro de que desea eliminar permanentemente a este estudiante del curso?")) return;
+  const handleDeleteStudent = (studentId: string) => {
+    setConfirmDeleteStudentId(studentId);
+  };
+
+  const executeDeleteStudent = async (studentId: string) => {
     try {
       await studentService.deleteStudent(studentId);
       loadData();
@@ -834,6 +886,22 @@ export const StudentRegistry: React.FC = () => {
           )}
         </div>
       </div>
+
+      <ConfirmDialog
+        isOpen={!!confirmDeleteStudentId}
+        title="Eliminar Estudiante"
+        message="¿Está seguro de que desea eliminar permanentemente a este estudiante del curso?"
+        confirmText="Eliminar"
+        cancelText="Cancelar"
+        isDanger={true}
+        onConfirm={async () => {
+          if (confirmDeleteStudentId) {
+            await executeDeleteStudent(confirmDeleteStudentId);
+            setConfirmDeleteStudentId(null);
+          }
+        }}
+        onCancel={() => setConfirmDeleteStudentId(null)}
+      />
     </div>
   );
 };

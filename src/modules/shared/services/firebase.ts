@@ -1,4 +1,6 @@
 import { db } from "../../../../sdk-firebase";
+export { db };
+
 import {
   collection,
   doc,
