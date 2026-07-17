@@ -86,9 +86,19 @@ export const KanbanBoard: React.FC = () => {
     loadBoardData();
   }, [selectedCourse]);
 
+  const isStudent = currentUser?.role === "estudiante";
+  const myProject = isStudent ? projects.find((p) => p.members.includes(currentUser.id)) : null;
+  const activeProject = isStudent ? myProject : projects.find((p) => p.id === selectedProjectId);
+
   // Escuchador en tiempo real para las tareas de este proyecto
   useEffect(() => {
-    if (!selectedProjectId) {
+    if (!selectedProjectId || !activeProject) {
+      setTasks([]);
+      return;
+    }
+
+    // Por seguridad, si es estudiante, forzar que solo escuche su propio proyecto
+    if (isStudent && selectedProjectId !== myProject?.id) {
       setTasks([]);
       return;
     }
@@ -113,19 +123,23 @@ export const KanbanBoard: React.FC = () => {
     );
 
     return () => unsubscribe();
-  }, [selectedProjectId]);
+  }, [selectedProjectId, activeProject, isStudent, myProject]);
 
-  // Si cambia el rol y es estudiante, auto-seleccionar su proyecto
+  // Si cambia el rol y es estudiante, auto-seleccionar su proyecto o limpiar si no tiene
   useEffect(() => {
     if (currentUser?.role === "estudiante" && projects.length > 0) {
-      const myProject = projects.find((p) => p.members.includes(currentUser.id));
-      if (myProject && selectedProjectId !== myProject.id) {
-        setSelectedProjectId(myProject.id);
+      const myProj = projects.find((p) => p.members.includes(currentUser.id));
+      if (myProj) {
+        if (selectedProjectId !== myProj.id) {
+          setSelectedProjectId(myProj.id);
+        }
+      } else {
+        if (selectedProjectId) {
+          setSelectedProjectId(null);
+        }
       }
     }
   }, [projects, currentUser, setSelectedProjectId, selectedProjectId]);
-
-  const activeProject = projects.find((p) => p.id === selectedProjectId);
 
   // Filtrado de HUs por búsqueda y prioridad
   const filteredTasks = tasks.filter((task) => {
@@ -623,9 +637,11 @@ export const KanbanBoard: React.FC = () => {
         </div>
       )}
 
-      {!selectedProjectId ? (
-        <div className="p-12 text-center bg-zinc-900 border border-white/5 rounded-2xl glass-panel text-gray-400">
-          Por favor, selecciona un proyecto para visualizar el tablero de trabajo.
+      {!selectedProjectId || !activeProject ? (
+        <div className="p-12 text-center bg-zinc-900 border border-white/5 rounded-2xl glass-panel text-zinc-400">
+          {currentUser?.role === "estudiante"
+            ? "No tienes ningún proyecto o grupo asignado en este curso. Por favor, solicita a tu docente que te asigne a un grupo."
+            : "Por favor, selecciona un proyecto para visualizar el tablero de trabajo."}
         </div>
       ) : (
         <>
