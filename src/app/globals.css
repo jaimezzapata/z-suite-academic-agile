@@ -1,26 +1,150 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
+@theme {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+
+  --color-brand-purple: #6366f1;
+  --color-brand-blue: #3b82f6;
+  --color-brand-emerald: #10b981;
+  --color-brand-rose: #f43f5e;
+  --color-brand-amber: #f59e0b;
+
+  --color-zinc-950: #09090b;
+  --color-zinc-900: #121214;
+  --color-zinc-800: #1e1e24;
+  --color-zinc-700: #2a2a32;
+  
+  --animate-fade-in: fade-in 0.15s ease-out;
+  --animate-slide-up: slide-up 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  --animate-slide-down: slide-down 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+:root {
+  --background: #fafafa;
+  --foreground: #09090b;
+  --font-geist-sans: var(--font-geist-sans), Inter, system-ui, sans-serif;
+  --font-geist-mono: var(--font-geist-mono), monospace;
+}
+
+/* Forzar modo oscuro por defecto para un look premium mate, limpio y profesional */
+:root {
+  color-scheme: dark;
+  --background: #09090b;
+  --foreground: #f4f4f5;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-geist-sans);
+  overflow-x: hidden;
+}
+
+/* Paneles Planos Minimalistas */
+.glass-panel {
+  background: #121214;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.glass-panel-light {
+  background: #18181b;
+  border: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.glass-card {
+  background: #121214;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  transition: all 0.15s ease;
+}
+
+.glass-card:hover {
+  background: #18181b;
+  border-color: rgba(255, 255, 255, 0.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  transform: translateY(-1px);
+}
+
+/* Animaciones personalizadas */
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slide-up {
+  from { transform: translateY(8px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes slide-down {
+  from { transform: translateY(-8px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+/* Ocultar barra de scroll pero mantener funcionalidad */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Scrollbar premium minimalista para columnas Kanban */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.01);
+  border-radius: 2px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 2px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+/* Solución de legibilidad para botones y selectores en modo oscuro */
+button.bg-white,
+button.bg-white *,
+input[type="submit"].bg-white,
+a.bg-white,
+a.bg-white * {
+  color: #09090b !important;
+}
+
+/* Estado deshabilitado para botones blancos */
+button.bg-white:disabled,
+button.bg-white:disabled *,
+button[disabled].bg-white,
+button[disabled].bg-white * {
+  color: #71717a !important;
+  background-color: #27272a !important;
+  border-color: rgba(255, 255, 255, 0.05) !important;
+  opacity: 0.5 !important;
+}
+
+/* Forzar color de texto oscuro en botones con clase text-black o text-zinc-950 */
+button[class*="text-black"],
+button[class*="text-black"] *,
+button[class*="text-zinc-950"],
+button[class*="text-zinc-950"] * {
+  color: #09090b !important;
+}
+
+select option {
+  background-color: #121214 !important;
+  color: #ffffff !important;
+}
+
+select option:disabled {
+  color: #52525b !important;
 }
