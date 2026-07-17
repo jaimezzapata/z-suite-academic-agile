@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { useDashboard } from "../../shared/components/Layout";
 import { boardService, ActivityLog, projectService, Project } from "../../shared/services/firebase";
-import { History, User, Clock, FileText, Search } from "lucide-react";
+import { History, User, Clock, FileText, Search, MessageSquare } from "lucide-react";
 
 export const AuditLogViewer: React.FC = () => {
   const { selectedCourse, selectedProjectId, setSelectedProjectId } = useDashboard();
@@ -129,7 +129,7 @@ export const AuditLogViewer: React.FC = () => {
                   </div>
 
                   <p className="text-gray-300">
-                    Cambió la tarjeta <code className="text-brand-purple font-semibold text-[10px]">#{log.task_id}</code> de{" "}
+                    Cambió la tarjeta {log.task_title ? <strong className="text-white font-bold">"{log.task_title}"</strong> : ""} <code className="text-brand-purple font-semibold text-[10px]">#{log.task_id}</code> de{" "}
                     <span className="px-1.5 py-0.5 bg-black/40 text-gray-400 rounded text-[9px] border border-white/5">
                       {log.previous_status}
                     </span>{" "}
@@ -138,6 +138,16 @@ export const AuditLogViewer: React.FC = () => {
                       {log.new_status}
                     </span>
                   </p>
+
+                  {log.comment && (
+                    <div className="mt-2.5 p-3 bg-brand-purple/5 border border-brand-purple/10 hover:border-brand-purple/20 text-gray-200 rounded-xl max-w-2xl flex items-start gap-2.5 transition-all">
+                      <MessageSquare className="w-3.5 h-3.5 mt-0.5 text-brand-purple flex-shrink-0" />
+                      <div className="space-y-0.5">
+                        <span className="font-bold text-[9px] text-gray-500 uppercase tracking-wider block">Observación / Retroalimentación</span>
+                        <p className="text-[11px] text-gray-300 italic">"{log.comment}"</p>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 <div className="flex items-center gap-1.5 text-gray-500 text-[10px] self-end md:self-center">

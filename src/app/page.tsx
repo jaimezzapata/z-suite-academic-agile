@@ -12,6 +12,7 @@ import { KanbanBoard } from "../modules/board/components/KanbanBoard";
 import { AnalyticsDashboard } from "../modules/analytics/components/AnalyticsDashboard";
 import { AuditLogViewer } from "../modules/board/components/AuditLogViewer";
 import { TeacherManager } from "../modules/auth/components/TeacherManager";
+import { ThemeSelector } from "../modules/shared/components/ThemeSelector";
 import { Kanban, AlertCircle, Key, Mail, ArrowRight } from "lucide-react";
 
 function DashboardContent() {
@@ -64,10 +65,13 @@ function DashboardContent() {
   if (!currentUser) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#09090b] p-6 relative font-sans">
+        <div className="absolute top-4 right-4 z-50">
+          <ThemeSelector />
+        </div>
         <div className="w-full max-w-sm bg-[#121214] border border-white/5 rounded-2xl p-8 shadow-2xl space-y-6">
           <div className="text-center space-y-1">
-            <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center border border-white/10 mx-auto mb-2">
-              <Kanban className="w-5 h-5 text-white" />
+            <div className="w-10 h-10 rounded-xl bg-brand-purple/10 flex items-center justify-center border border-brand-purple/20 mx-auto mb-2 transition-all duration-300">
+              <Kanban className="w-5 h-5 text-brand-purple transition-all duration-300" />
             </div>
             <h1 className="text-xl font-bold text-white tracking-tight">Iniciar Sesión</h1>
             <p className="text-xs text-gray-400">Ingrese sus credenciales académicas para continuar.</p>
@@ -85,7 +89,7 @@ function DashboardContent() {
               <label className="text-[10px] text-gray-500 uppercase font-semibold tracking-wider block">
                 Correo Electrónico
               </label>
-              <div className="flex items-center gap-2 bg-[#18181b] border border-white/5 rounded-xl px-3 py-2">
+              <div className="flex items-center gap-2 bg-[#18181b] border border-white/5 rounded-xl px-3 py-2 focus-within:border-brand-purple focus-within:ring-1 focus-within:ring-brand-purple/30 transition-all duration-300">
                 <Mail className="w-4 h-4 text-gray-500" />
                 <input
                   type="email"
@@ -101,11 +105,11 @@ function DashboardContent() {
               <label className="text-[10px] text-gray-500 uppercase font-semibold tracking-wider block">
                 Contraseña / Código Estudiante
               </label>
-              <div className="flex items-center gap-2 bg-[#18181b] border border-white/5 rounded-xl px-3 py-2">
+              <div className="flex items-center gap-2 bg-[#18181b] border border-white/5 rounded-xl px-3 py-2 focus-within:border-brand-purple focus-within:ring-1 focus-within:ring-brand-purple/30 transition-all duration-300">
                 <Key className="w-4 h-4 text-gray-500" />
                 <input
                   type="text"
-                  placeholder="Código o admin123"
+                  placeholder="Contraseña / Código"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className="flex-1 text-xs bg-transparent border-none text-gray-200 placeholder-gray-600 focus:outline-none"
@@ -116,29 +120,12 @@ function DashboardContent() {
             <button
               type="submit"
               disabled={loginLoading}
-              className="w-full flex items-center justify-center gap-1.5 py-2.5 bg-white text-[#09090b] text-xs font-bold rounded-xl hover:bg-gray-200 disabled:opacity-50 transition-all cursor-pointer"
+              className="w-full flex items-center justify-center gap-1.5 py-2.5 bg-brand-purple hover:bg-brand-purple-hover text-white text-xs font-bold rounded-xl shadow-lg shadow-brand-purple/20 disabled:opacity-50 transition-all duration-300 cursor-pointer"
             >
               {loginLoading ? "Iniciando Sesión..." : "Ingresar"}
               <ArrowRight className="w-4 h-4" />
             </button>
           </form>
-
-          {/* Ayuda de Cuentas de Acceso (Sutil y Minimalista) */}
-          <div className="pt-4 border-t border-white/5 space-y-2">
-            <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Cuentas de Acceso:</p>
-            <div className="grid grid-cols-1 gap-2 text-[10px] text-gray-400">
-              <div className="bg-[#18181b]/50 p-2.5 rounded-lg border border-white/2">
-                <span className="font-semibold text-white">Administrador Principal (Único para crear docentes):</span>
-                <p className="text-gray-500 mt-0.5">Correo: <code className="text-gray-300">zapataval2304@gmail.com</code></p>
-                <p className="text-gray-500">Contraseña: <code className="text-gray-300">admin123</code></p>
-              </div>
-              <div className="p-2.5">
-                <p className="text-gray-500 leading-normal">
-                  <span className="font-semibold text-gray-400">Docentes y Estudiantes:</span> Los docentes son creados por el administrador en su respectivo panel. Los estudiantes son matriculados por los docentes. Ambos inician sesión con su correo y código registrado.
-                </p>
-              </div>
-            </div>
-          </div>
         </div>
       </div>
     );

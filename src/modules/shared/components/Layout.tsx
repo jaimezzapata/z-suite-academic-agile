@@ -2,7 +2,8 @@
 
 import React, { useState, useEffect, createContext, useContext } from "react";
 import { useAuth } from "../../auth/hooks/useAuth";
-import { subscribeToDBMode, DBMode, courseService, Course } from "../services/firebase";
+import { courseService, Course } from "../services/firebase";
+import { ThemeSelector } from "./ThemeSelector";
 import {
   Kanban,
   BarChart3,
@@ -122,14 +123,8 @@ export const DashboardProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { currentUser, logout } = useAuth();
   const { currentView, setCurrentView, selectedCourse, setSelectedCourse, courses } = useDashboard();
-  const [dbMode, setDbMode] = useState<DBMode>("firestore");
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
-
-  useEffect(() => {
-    const unsubscribe = subscribeToDBMode((mode) => setDbMode(mode));
-    return unsubscribe;
-  }, []);
 
   const navItems = [
     {
@@ -217,21 +212,17 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
 
           {/* Database Mode Pill */}
           <div
-            className={`flex items-center gap-1.5 px-2 py-0.5 rounded border text-[9px] font-medium transition-all ${
-              dbMode === "firestore"
-                ? "bg-brand-emerald/5 text-brand-emerald border-brand-emerald/10"
-                : "bg-brand-amber/5 text-brand-amber border-brand-amber/10"
-            }`}
+            className="flex items-center gap-1.5 px-2 py-0.5 rounded border text-[9px] font-medium transition-all bg-brand-emerald/5 text-brand-emerald border-brand-emerald/10"
           >
             <Database className="w-2.5 h-2.5" />
-            <span className="hidden xs:inline">
-              {dbMode === "firestore" ? "Firebase Conectado" : "Almacenamiento Local (Fallback)"}
-            </span>
-            <span className="xs:hidden">{dbMode === "firestore" ? "Firebase" : "Local"}</span>
+            <span className="hidden xs:inline">Firebase Conectado</span>
+            <span className="xs:hidden">Firebase</span>
           </div>
         </div>
 
         <div className="flex items-center gap-3">
+          <ThemeSelector />
+          
           {/* Selector de Cursos Activos para Docente */}
           {currentUser?.role === "docente" && courses.length > 0 && (
             <div className="flex items-center gap-2">

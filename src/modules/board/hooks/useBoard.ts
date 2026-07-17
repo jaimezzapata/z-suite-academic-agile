@@ -35,10 +35,12 @@ export const useBoard = () => {
           courseId: task.courseId,
           projectId: task.projectId,
           task_id: task.id,
+          task_title: task.title,
           user_id: "sistema",
           user_name: "Sistema",
           previous_status: "Creado",
           new_status: "Backlog",
+          comment: "Historia de Usuario creada en el backlog.",
         });
       }
       return task;
@@ -113,10 +115,12 @@ export const useBoard = () => {
         courseId: task.courseId,
         projectId: task.projectId,
         task_id: task.id,
+        task_title: task.title,
         user_id: user.id,
         user_name: user.name,
         previous_status: oldStatus,
         new_status: newStatus,
+        comment: feedbackDocente,
       });
 
       return true;
@@ -131,7 +135,12 @@ export const useBoard = () => {
     title: string,
     description: string,
     assignedTo: string | null,
-    userRole: "admin" | "docente" | "estudiante"
+    userRole: "admin" | "docente" | "estudiante",
+    parentHuId?: string | null,
+    priority?: "alta" | "media" | "baja",
+    dueType?: "date" | "days",
+    dueDate?: string,
+    dueDays?: number
   ): Promise<boolean> => {
     setError(null);
     try {
@@ -147,6 +156,12 @@ export const useBoard = () => {
         description,
         assignedTo,
       };
+
+      if (parentHuId !== undefined) updates.parentHuId = parentHuId;
+      if (priority !== undefined) updates.priority = priority;
+      if (dueType !== undefined) updates.dueType = dueType;
+      if (dueDate !== undefined) updates.dueDate = dueDate;
+      if (dueDays !== undefined) updates.dueDays = dueDays;
 
       await boardService.updateTask(task.id, updates);
       return true;
@@ -167,6 +182,36 @@ export const useBoard = () => {
     }
   };
 
+  const activateTaskInKanban = async (
+    task: Task,
+    user: { id: string; name: string; role: string }
+  ): Promise<boolean> => {
+    setLoading(true);
+    setError(null);
+    try {
+      await boardService.updateTask(task.id, { inKanban: true, status: "Backlog" });
+      
+      // Loggear la activación en la auditoría
+      await boardService.createActivityLog({
+        courseId: task.courseId,
+        projectId: task.projectId,
+        task_id: task.id,
+        task_title: task.title,
+        user_id: user.id,
+        user_name: user.name,
+        previous_status: "Borrador (Backlog)",
+        new_status: "Activado en Kanban",
+        comment: "Historia de Usuario activada en el tablero Kanban para desarrollo.",
+      });
+      return true;
+    } catch (e: any) {
+      setError(e.message || "Error al activar la tarea");
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return {
     loading,
     error,
@@ -175,5 +220,6 @@ export const useBoard = () => {
     transitionTask,
     updateCardDetails,
     deleteCard,
+    activateTaskInKanban,
   };
 };

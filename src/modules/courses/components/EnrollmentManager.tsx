@@ -33,7 +33,7 @@ import {
 // VISTA 1: ENROLLMENT MANAGER (ASIGNACIÓN DE GRUPOS CON MODAL EN CUADRÍCULA)
 // =========================================================================
 export const EnrollmentManager: React.FC = () => {
-  const { selectedCourse, refreshCourses } = useDashboard();
+  const { selectedCourse, refreshCourses, setCurrentView } = useDashboard();
   const { updateInscriptionsStatus } = useCourses();
   const { moveStudent } = useProjects();
 
@@ -406,7 +406,13 @@ export const EnrollmentManager: React.FC = () => {
                       </div>
 
                       <div className="flex justify-between items-center pt-2 border-t border-white/5 w-full text-[10px]" onClick={(e) => e.stopPropagation()}>
-                        <span className="text-brand-purple font-semibold hover:underline">Administrar alumnos ➜</span>
+                        <button
+                          type="button"
+                          onClick={() => setCurrentView("students-list")}
+                          className="text-brand-purple font-semibold hover:underline cursor-pointer transition-all hover:text-brand-purple/80"
+                        >
+                          Administrar alumnos →
+                        </button>
                         <div className="flex items-center gap-2">
                           <button
                             onClick={() => handleStartEditProject(project)}

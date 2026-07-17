@@ -26,7 +26,37 @@ export default function RootLayout({
     <html
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      suppressHydrationWarning
     >
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function() {
+                try {
+                  const theme = localStorage.getItem('theme') || 'dark';
+                  if (theme === 'dark') {
+                    document.documentElement.classList.add('dark');
+                  } else {
+                    document.documentElement.classList.remove('dark');
+                  }
+                  
+                  const color = localStorage.getItem('theme-color');
+                  if (color) {
+                    document.documentElement.style.setProperty('--brand-color', color);
+                    document.documentElement.style.setProperty('--color-brand-purple', color);
+                  }
+                  const colorHover = localStorage.getItem('theme-color-hover');
+                  if (colorHover) {
+                    document.documentElement.style.setProperty('--brand-color-hover', colorHover);
+                    document.documentElement.style.setProperty('--color-brand-purple-hover', colorHover);
+                  }
+                } catch (e) {}
+              })();
+            `,
+          }}
+        />
+      </head>
       <body className="min-h-full flex flex-col">{children}</body>
     </html>
   );

@@ -6,16 +6,35 @@
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 
-  --color-brand-purple: #6366f1;
+  --color-brand-purple: var(--brand-color, #6366f1);
+  --color-brand-purple-hover: var(--brand-color-hover, #4f46e5);
   --color-brand-blue: #3b82f6;
   --color-brand-emerald: #10b981;
   --color-brand-rose: #f43f5e;
   --color-brand-amber: #f59e0b;
 
-  --color-zinc-950: #09090b;
-  --color-zinc-900: #121214;
-  --color-zinc-800: #1e1e24;
-  --color-zinc-700: #2a2a32;
+  --color-zinc-50: var(--zinc-50);
+  --color-zinc-100: var(--zinc-100);
+  --color-zinc-200: var(--zinc-200);
+  --color-zinc-300: var(--zinc-300);
+  --color-zinc-400: var(--zinc-400);
+  --color-zinc-500: var(--zinc-500);
+  --color-zinc-600: var(--zinc-600);
+  --color-zinc-700: var(--zinc-700);
+  --color-zinc-800: var(--zinc-800);
+  --color-zinc-900: var(--zinc-900);
+  --color-zinc-950: var(--zinc-950);
+
+  --color-gray-50: var(--gray-50);
+  --color-gray-100: var(--gray-100);
+  --color-gray-200: var(--gray-200);
+  --color-gray-300: var(--gray-300);
+  --color-gray-400: var(--gray-400);
+  --color-gray-500: var(--gray-500);
+  --color-gray-600: var(--gray-600);
+  --color-gray-700: var(--gray-700);
+  --color-gray-800: var(--gray-800);
+  --color-gray-950: var(--gray-950);
   
   --animate-fade-in: fade-in 0.15s ease-out;
   --animate-slide-up: slide-up 0.25s cubic-bezier(0.16, 1, 0.3, 1);
@@ -23,17 +42,98 @@
 }
 
 :root {
-  --background: #fafafa;
-  --foreground: #09090b;
   --font-geist-sans: var(--font-geist-sans), Inter, system-ui, sans-serif;
   --font-geist-mono: var(--font-geist-mono), monospace;
+
+  /* Default theme color (Indigo/Purple) */
+  --brand-color: #6366f1;
+  --brand-color-hover: #4f46e5;
+  
+  /* Light Mode values */
+  color-scheme: light;
+  --background: #f4f5f7; /* Background contrast */
+  --foreground: #09090b;
+  
+  --panel-bg: #ffffff;
+  --panel-light-bg: #f4f4f5;
+  --panel-border: rgba(9, 9, 11, 0.08);
+  --panel-border-strong: rgba(9, 9, 11, 0.14);
+  
+  --card-hover-bg: #fafafa;
+  --card-hover-border: rgba(9, 9, 11, 0.14);
+  --card-shadow-hover: 0 4px 14px rgba(0, 0, 0, 0.04);
+  
+  --text-white: #09090b;
+
+  /* Inverted zinc shades for light mode */
+  --zinc-50: #09090b;
+  --zinc-100: #18181b;
+  --zinc-200: #27272a;
+  --zinc-300: #3f3f46;
+  --zinc-400: #52525b;
+  --zinc-500: #71717a;
+  --zinc-600: #a1a1aa;
+  --zinc-700: #d4d4d8;
+  --zinc-800: #e4e4e7;
+  --zinc-900: #f4f4f5;
+  --zinc-950: #fbfbfc;
+
+  /* Inverted gray shades for light mode */
+  --gray-50: #030712;
+  --gray-100: #111827;
+  --gray-200: #1f2937;
+  --gray-300: #374151;
+  --gray-400: #4b5563;
+  --gray-500: #6b7280;
+  --gray-600: #9ca3af;
+  --gray-700: #d1d5db;
+  --gray-800: #e5e7eb;
+  --gray-900: #f3f4f6;
+  --gray-950: #f9fafb;
 }
 
-/* Forzar modo oscuro por defecto para un look premium mate, limpio y profesional */
-:root {
+:root.dark {
+  /* Dark Mode values */
   color-scheme: dark;
   --background: #09090b;
   --foreground: #f4f4f5;
+  
+  --panel-bg: #121214;
+  --panel-light-bg: #18181b;
+  --panel-border: rgba(255, 255, 255, 0.06);
+  --panel-border-strong: rgba(255, 255, 255, 0.12);
+  
+  --card-hover-bg: #18181b;
+  --card-hover-border: rgba(255, 255, 255, 0.1);
+  --card-shadow-hover: 0 4px 12px rgba(0, 0, 0, 0.3);
+  
+  --text-white: #ffffff;
+
+  /* Standard zinc shades for dark mode */
+  --zinc-50: #fafafa;
+  --zinc-100: #f4f4f5;
+  --zinc-200: #e4e4e7;
+  --zinc-300: #d4d4d8;
+  --zinc-400: #a1a1aa;
+  --zinc-500: #71717a;
+  --zinc-600: #52525b;
+  --zinc-700: #3f3f46;
+  --zinc-800: #27272a;
+  --zinc-900: #18181b;
+  --zinc-950: #09090b;
+
+  /* Standard gray shades for dark mode */
+  --gray-50: #f9fafb;
+  --gray-100: #f3f4f6;
+  --gray-200: #e5e7eb;
+  --gray-300: #d1d5db;
+  --gray-400: #9ca3af;
+  --gray-500: #6b7280;
+  --gray-600: #4b5563;
+  --gray-700: #374151;
+  --gray-800: #1f2937;
+  --gray-900: #111827;
+  --gray-950: #030712;
 }
 
 body {
@@ -41,29 +141,88 @@ body {
   color: var(--foreground);
   font-family: var(--font-geist-sans);
   overflow-x: hidden;
+  transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
 }
+
+/* Redirigir fondos y bordes de utilidades Tailwind que usan valores arbitrarios oscuros */
+.bg-\[\#09090b\] {
+  background-color: var(--background) !important;
+}
+.bg-\[\#121214\] {
+  background-color: var(--panel-bg) !important;
+}
+.bg-\[\#18181b\] {
+  background-color: var(--panel-light-bg) !important;
+}
+.border-white\/5 {
+  border-color: var(--panel-border) !important;
+}
+.border-white\/10 {
+  border-color: var(--panel-border-strong) !important;
+}
+.bg-white\/5 {
+  background-color: var(--panel-light-bg) !important;
+}
+.bg-white\/10 {
+  background-color: var(--panel-border) !important;
+}
+
+/* Redirigir clases de texto */
+.text-white {
+  color: var(--text-white) !important;
+}
+
+/* Excepciones de legibilidad: Mantener textos en blanco para botones, badges y fondos de acento en modo claro */
+.bg-brand-purple,
+.bg-brand-purple *,
+.bg-brand-blue,
+.bg-brand-blue *,
+.bg-brand-emerald,
+.bg-brand-emerald *,
+.bg-brand-rose,
+.bg-brand-rose *,
+.bg-brand-amber,
+.bg-brand-amber *,
+a[class*="bg-brand-"],
+a[class*="bg-brand-"] * {
+  --text-white: #ffffff !important;
+}
+
+/* Consistencia de inputs de formulario y textareas en modo claro/oscuro */
+input:not([type="submit"]),
+textarea,
+select {
+  color: var(--foreground) !important;
+}
+
+input:not([type="submit"])::placeholder,
+textarea::placeholder {
+  color: var(--text-gray-500) !important;
+  opacity: 0.7;
+}
+
 
 /* Paneles Planos Minimalistas */
 .glass-panel {
-  background: #121214;
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: var(--panel-bg);
+  border: 1px solid var(--panel-border);
 }
 
 .glass-panel-light {
-  background: #18181b;
-  border: 1px solid rgba(255, 255, 255, 0.04);
+  background: var(--panel-light-bg);
+  border: 1px solid var(--panel-border);
 }
 
 .glass-card {
-  background: #121214;
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  background: var(--panel-bg);
+  border: 1px solid var(--panel-border);
   transition: all 0.15s ease;
 }
 
 .glass-card:hover {
-  background: #18181b;
-  border-color: rgba(255, 255, 255, 0.1);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  background: var(--card-hover-bg);
+  border-color: var(--card-hover-border);
+  box-shadow: var(--card-shadow-hover);
   transform: translateY(-1px);
 }
 
@@ -141,10 +300,122 @@ button[class*="text-zinc-950"] * {
 }
 
 select option {
-  background-color: #121214 !important;
-  color: #ffffff !important;
+  background-color: var(--panel-bg) !important;
+  color: var(--foreground) !important;
 }
 
 select option:disabled {
-  color: #52525b !important;
+  color: var(--text-gray-500) !important;
+}
+
+/* Redirigir hover:text-white y group-hover:text-white en modo claro */
+.hover\:text-white:hover {
+  color: var(--text-white) !important;
+}
+.group:hover .group-hover\:text-white {
+  color: var(--text-white) !important;
+}
+
+/* Redirigir fondos hover translúcidos en modo claro */
+.hover\:bg-white\/1:hover {
+  background-color: var(--card-hover-bg) !important;
+}
+.hover\:bg-white\/2:hover {
+  background-color: var(--card-hover-bg) !important;
+}
+.hover\:bg-white\/5:hover {
+  background-color: var(--panel-light-bg) !important;
+}
+.hover\:bg-white\/10:hover {
+  background-color: var(--panel-border) !important;
+}
+
+/* Redirigir fondos group-hover translúcidos en modo claro */
+.group:hover .group-hover\:bg-white\/1 {
+  background-color: var(--card-hover-bg) !important;
+}
+.group:hover .group-hover\:bg-white\/2 {
+  background-color: var(--card-hover-bg) !important;
+}
+.group:hover .group-hover\:bg-white\/5 {
+  background-color: var(--panel-light-bg) !important;
+}
+.group:hover .group-hover\:bg-white\/10 {
+  background-color: var(--panel-border) !important;
+}
+
+/* Mejora de Contraste y Acentos Dinámicos de Color en Modo Claro */
+:root:not(.dark) .bg-\[\#121214\].rounded-2xl,
+:root:not(.dark) .bg-\[\#121214\].rounded-xl,
+:root:not(.dark) .bg-zinc-900.rounded-2xl,
+:root:not(.dark) .bg-zinc-900.rounded-xl,
+:root:not(.dark) .bg-\[\#18181b\].rounded-xl {
+  background-color: #ffffff !important;
+  border: 1px solid rgba(9, 9, 11, 0.08) !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02), 0 1px 2px rgba(0, 0, 0, 0.04) !important;
+  position: relative;
+  overflow: hidden !important;
+}
+
+/* Línea de acento de color superior dinámica en todas las tarjetas */
+:root:not(.dark) .bg-\[\#121214\].rounded-2xl::before,
+:root:not(.dark) .bg-\[\#121214\].rounded-xl::before,
+:root:not(.dark) .bg-zinc-900.rounded-2xl::before,
+:root:not(.dark) .bg-zinc-900.rounded-xl::before,
+:root:not(.dark) .bg-\[\#18181b\].rounded-xl::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background-color: var(--color-brand-purple) !important;
+  opacity: 0.15;
+  transition: opacity 0.3s ease;
+  z-index: 10;
+}
+
+:root:not(.dark) .bg-\[\#121214\].rounded-2xl:hover::before,
+:root:not(.dark) .bg-\[\#121214\].rounded-xl:hover::before,
+:root:not(.dark) .bg-zinc-900.rounded-2xl:hover::before,
+:root:not(.dark) .bg-zinc-900.rounded-xl:hover::before,
+:root:not(.dark) .bg-\[\#18181b\].rounded-xl:hover::before {
+  opacity: 0.8;
+}
+
+/* Tarjetas seleccionadas (Vibrantes y Pasteles) */
+:root:not(.dark) .bg-brand-purple\/2 {
+  background-color: color-mix(in srgb, var(--color-brand-purple) 8%, #ffffff) !important;
+  border: 2px solid var(--color-brand-purple) !important;
+  box-shadow: 0 10px 25px -5px color-mix(in srgb, var(--color-brand-purple) 15%, transparent), 
+              0 8px 10px -6px color-mix(in srgb, var(--color-brand-purple) 15%, transparent) !important;
+}
+
+:root:not(.dark) .bg-brand-purple\/2::before {
+  opacity: 1 !important;
+  height: 4px !important;
+}
+
+/* Efecto hover sobre tarjetas no seleccionadas */
+:root:not(.dark) .hover\:bg-white\/1:hover {
+  background-color: color-mix(in srgb, var(--color-brand-purple) 3%, #ffffff) !important;
+}
+
+:root:not(.dark) .border-white\/5:hover {
+  border-color: color-mix(in srgb, var(--color-brand-purple) 30%, transparent) !important;
+}
+
+:root:not(.dark) .hover\:shadow-brand-purple\/2:hover {
+  box-shadow: 0 12px 20px -8px color-mix(in srgb, var(--color-brand-purple) 18%, transparent) !important;
+}
+
+/* Indicador de navegación lateral activo con el color seleccionado */
+:root:not(.dark) .border-l-2.border-white {
+  border-left-color: var(--color-brand-purple) !important;
+  background-color: color-mix(in srgb, var(--color-brand-purple) 6%, #ffffff) !important;
+  color: var(--color-brand-purple) !important;
+}
+
+:root:not(.dark) .border-l-2.border-white * {
+  color: var(--color-brand-purple) !important;
 }
