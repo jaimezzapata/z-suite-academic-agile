@@ -4,7 +4,7 @@ import React, { createContext, useContext, useState, useEffect } from "react";
 import { Student, studentService, userService } from "../../shared/services/firebase";
 import { auth, db } from "../../../../sdk-firebase";
 import { signInWithEmailAndPassword } from "firebase/auth";
-import { doc, getDoc } from "firebase/firestore";
+import { doc, getDoc, onSnapshot } from "firebase/firestore";
 
 export type UserRole = "admin" | "docente" | "estudiante";
 
@@ -45,6 +45,32 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
     setLoading(false);
   }, []);
+  // Listener en tiempo real para estudiantes
+  useEffect(() => {
+    if (!currentUser || currentUser.role !== "estudiante") return;
+
+    const unsub = onSnapshot(doc(db, "students", currentUser.id), (docSnap) => {
+      if (docSnap.exists()) {
+        const studentData = docSnap.data();
+        const updatedUser: CurrentUser = {
+          ...currentUser,
+          name: studentData.nombre_completo,
+          email: studentData.correo_institucional,
+          codigo: studentData.codigo_estudiante,
+          courseId: studentData.courseId,
+          projectId: studentData.projectId,
+        };
+        
+        // Solo actualizar si hubo cambios (comparación simple de courseId y projectId)
+        if (currentUser.projectId !== updatedUser.projectId || currentUser.courseId !== updatedUser.courseId) {
+          setCurrentUser(updatedUser);
+          localStorage.setItem("academic_agile_session", JSON.stringify(updatedUser));
+        }
+      }
+    });
+
+    return () => unsub();
+  }, [currentUser?.id, currentUser?.role]); // Solo depende del ID y rol para no causar loops con los demás cambios
 
   const loginWithCredentials = async (email: string, codeOrPassword: string): Promise<boolean> => {
     const normalizedEmail = email.trim().toLowerCase();

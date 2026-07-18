@@ -281,7 +281,6 @@ export const StudentProjectDetails: React.FC = () => {
                     <User className="w-4 h-4 text-gray-500" />
                     {member.nombre_completo}
                   </h4>
-                  <p className="text-[10px] text-gray-500">Documento: {member.codigo_estudiante}</p>
                 </div>
 
                 <div className="space-y-1.5 pt-3 border-t border-white/5 mt-3 w-full">
@@ -289,6 +288,12 @@ export const StudentProjectDetails: React.FC = () => {
                     <Mail className="w-3.5 h-3.5 text-gray-500" />
                     <span className="truncate">{member.correo_institucional}</span>
                   </div>
+                  {member.telefono && (
+                    <div className="flex items-center gap-2 text-xs text-gray-400">
+                      <Phone className="w-3.5 h-3.5 text-gray-500" />
+                      <span>{member.telefono}</span>
+                    </div>
+                  )}
                 </div>
               </div>
             );

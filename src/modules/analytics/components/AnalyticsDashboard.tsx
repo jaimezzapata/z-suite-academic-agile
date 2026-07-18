@@ -20,9 +20,12 @@ import {
   RotateCcw,
   Calendar,
   Target,
+  Trash2,
 } from "lucide-react";
 import { DonutChart } from "./DonutChart";
 import { StatusChip, OnTimeBadge, CriteriaBar, formatDate } from "./AnalyticsHelpers";
+import { ConfirmDialog } from "../../shared/components/ConfirmDialog";
+import { boardService } from "../../shared/services/firebase";
 
 export const AnalyticsDashboard: React.FC = () => {
   const { currentUser } = useAuth();
@@ -34,6 +37,8 @@ export const AnalyticsDashboard: React.FC = () => {
 
   const [projects, setProjects] = useState<Project[]>([]);
   const [expandedStudents, setExpandedStudents] = useState<Set<string>>(new Set());
+  const [isWiping, setIsWiping] = useState(false);
+  const [showWipeConfirm, setShowWipeConfirm] = useState(false);
 
   useEffect(() => {
     const loadProjects = async () => {
@@ -74,6 +79,20 @@ export const AnalyticsDashboard: React.FC = () => {
   const totalCompletedHUs = groupOnTime + groupLate;
   const complianceRate = totalCompletedHUs > 0 ? Math.round((groupOnTime / totalCompletedHUs) * 100) : 0;
 
+  const handleWipeMetrics = async () => {
+    if (!selectedProjectId) return;
+    setIsWiping(true);
+    try {
+      await boardService.wipeProjectTasksAndMetrics(selectedProjectId);
+      // Forzar recarga o actualización recargando la página o emitiendo un evento
+      window.location.reload();
+    } catch (e) {
+      console.error("Error al limpiar métricas:", e);
+      setIsWiping(false);
+      setShowWipeConfirm(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Cabecera */}
@@ -91,20 +110,42 @@ export const AnalyticsDashboard: React.FC = () => {
         </div>
 
         {currentUser?.role === "docente" && (
-          <select
-            value={selectedProjectId || ""}
-            onChange={(e) => setSelectedProjectId(e.target.value || null)}
-            className="text-xs bg-zinc-950 border border-zinc-800 text-zinc-800 dark:text-zinc-100 rounded-xl px-3 py-2 focus:outline-none focus:border-brand-purple cursor-pointer min-w-[200px]"
-          >
-            <option value="" disabled>Seleccionar Proyecto...</option>
-            {projects.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.name}
-              </option>
-            ))}
-          </select>
+          <div className="flex items-center gap-2">
+            <select
+              value={selectedProjectId || ""}
+              onChange={(e) => setSelectedProjectId(e.target.value || null)}
+              className="text-xs bg-zinc-950 border border-zinc-800 text-zinc-800 dark:text-zinc-100 rounded-xl px-3 py-2 focus:outline-none focus:border-brand-purple cursor-pointer min-w-[200px]"
+            >
+              <option value="" disabled>Seleccionar Proyecto...</option>
+              {projects.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.name}
+                </option>
+              ))}
+            </select>
+            {selectedProjectId && (
+              <button
+                onClick={() => setShowWipeConfirm(true)}
+                className="flex items-center justify-center p-2 bg-brand-rose/10 text-brand-rose hover:bg-brand-rose hover:text-white rounded-xl transition-colors cursor-pointer border border-brand-rose/20"
+                title="Limpiar todas las métricas y tareas del proyecto"
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
+            )}
+          </div>
         )}
       </div>
+
+      <ConfirmDialog
+        isOpen={showWipeConfirm}
+        title="Limpiar Métricas y Tareas"
+        message="¿Estás seguro de que deseas eliminar por completo TODAS las tareas (HU y RF) y el historial de métricas de este proyecto? Esta acción dejará el proyecto en blanco y no se puede deshacer."
+        confirmText={isWiping ? "Limpiando..." : "Sí, Limpiar Proyecto"}
+        cancelText="Cancelar"
+        onConfirm={handleWipeMetrics}
+        onCancel={() => !isWiping && setShowWipeConfirm(false)}
+        isDanger={true}
+      />
 
       {error && (
         <div className="p-3 bg-brand-rose/10 border border-brand-rose/20 text-brand-rose rounded-xl text-xs flex items-center gap-2 animate-slide-up">

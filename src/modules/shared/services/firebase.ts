@@ -277,6 +277,13 @@ export const projectService = {
         const filteredMembers = (data.members || []).filter((id: string) => id !== studentId);
         batch.update(sourceProjRef, { members: filteredMembers });
       }
+
+      // Limpiar tareas (HU/RF) asignadas a este estudiante en el proyecto anterior
+      const qTasks = query(collection(db, "tasks"), where("projectId", "==", sourceProjectId), where("assignedTo", "==", studentId));
+      const snapTasks = await getDocs(qTasks);
+      snapTasks.docs.forEach((tDoc) => {
+        batch.update(tDoc.ref, { assignedTo: null });
+      });
     }
 
     // Agregar a proyecto destino
@@ -380,6 +387,13 @@ export const projectService = {
       batch.update(studentDoc.ref, { projectId: null });
     });
 
+    // 3. Limpiar asignaciones de tareas (HU/RF) en el proyecto
+    const qTasks = query(collection(db, "tasks"), where("projectId", "==", projectId));
+    const snapTasks = await getDocs(qTasks);
+    snapTasks.docs.forEach((tDoc) => {
+      batch.update(tDoc.ref, { assignedTo: null });
+    });
+
     await batch.commit();
   },
 
@@ -400,6 +414,15 @@ export const projectService = {
       const studentData = studentDoc.data();
       if (studentData.projectId) {
          batch.update(studentDoc.ref, { projectId: null });
+      }
+    });
+
+    // 3. Limpiar asignaciones de tareas en todos los proyectos de este curso
+    const qTasks = query(collection(db, "tasks"), where("courseId", "==", courseId));
+    const snapTasks = await getDocs(qTasks);
+    snapTasks.docs.forEach((tDoc) => {
+      if (tDoc.data().assignedTo !== null) {
+        batch.update(tDoc.ref, { assignedTo: null });
       }
     });
 
@@ -480,6 +503,26 @@ export const boardService = {
 
   async deleteTask(taskId: string): Promise<void> {
     await deleteDoc(doc(db, "tasks", taskId));
+  },
+
+  async wipeProjectTasksAndMetrics(projectId: string): Promise<void> {
+    const batch = writeBatch(db);
+
+    // 1. Obtener y eliminar todas las tareas (HUs y RFs)
+    const qTasks = query(collection(db, "tasks"), where("projectId", "==", projectId));
+    const snapTasks = await getDocs(qTasks);
+    snapTasks.docs.forEach((d) => {
+      batch.delete(d.ref);
+    });
+
+    // 2. Obtener y eliminar todos los activity logs
+    const qLogs = query(collection(db, "activity_logs"), where("projectId", "==", projectId));
+    const snapLogs = await getDocs(qLogs);
+    snapLogs.docs.forEach((d) => {
+      batch.delete(d.ref);
+    });
+
+    await batch.commit();
   },
 
   async createActivityLog(log: Omit<ActivityLog, "id" | "timestamp">): Promise<ActivityLog> {
