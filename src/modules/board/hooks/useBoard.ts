@@ -1,7 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { boardService, Task, Student, Project } from "../../shared/services/firebase";
+import { collection, query, where, onSnapshot } from "firebase/firestore";
+import { db } from "../../../../sdk-firebase";
 
 export const useBoard = () => {
   const [loading, setLoading] = useState(false);
@@ -223,3 +225,43 @@ export const useBoard = () => {
     activateTaskInKanban,
   };
 };
+
+export const useTasksListener = (projectId: string | null, isStudent: boolean, myProjectId?: string | null) => {
+  const [tasks, setTasks] = useState<Task[]>([]);
+
+  useEffect(() => {
+    if (!projectId) {
+      setTasks([]);
+      return;
+    }
+
+    if (isStudent && projectId !== myProjectId) {
+      setTasks([]);
+      return;
+    }
+
+    const q = query(
+      collection(db, "tasks"),
+      where("projectId", "==", projectId)
+    );
+
+    const unsubscribe = onSnapshot(
+      q,
+      (snapshot) => {
+        const taskList = snapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        })) as Task[];
+        setTasks(taskList);
+      },
+      (error) => {
+        console.error("Error en la suscripción en tiempo real de tareas:", error);
+      }
+    );
+
+    return () => unsubscribe();
+  }, [projectId, isStudent, myProjectId]);
+
+  return { tasks, setTasks };
+};
+

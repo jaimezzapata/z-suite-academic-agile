@@ -54,6 +54,8 @@ export interface StudentAnalytics {
   lateCount: number;
   totalRejections: number;
   huDetails: HUProgress[];
+  symbolicGrade: number;
+  gradeMessage: string;
 }
 
 export interface GroupAnalytics {
@@ -155,6 +157,24 @@ export const useAnalytics = (courseId: string, projectId: string | null) => {
             const overallProgress = calculateOverallProgress(studentHuIds, projectTasks);
             const studentCompleted = completedTasks.filter((t) => t.assignedTo === student.id);
 
+            // Cálculo de Nota Simbólica
+            let symbolicGrade = 0;
+            if (studentHUs.length > 0 || studentCompleted.length > 0) {
+              // Base basada en el progreso general (0 a 5)
+              let base = (overallProgress / 100) * 5.0;
+              // Penalizaciones
+              base -= (lateCount * 0.5); // -0.5 por entrega tarde
+              base -= (totalRejections * 0.2); // -0.2 por cada devolución
+              symbolicGrade = Math.max(0, Math.min(5, base));
+            }
+            
+            // Redondear a 1 decimal
+            symbolicGrade = Math.round(symbolicGrade * 10) / 10;
+            
+            let gradeMessage = "Va mal";
+            if (symbolicGrade >= 4.0) gradeMessage = "Va excelente";
+            else if (symbolicGrade >= 3.0) gradeMessage = "Va bien";
+
             return {
               studentId: student.id,
               name: student.nombre_completo,
@@ -169,6 +189,8 @@ export const useAnalytics = (courseId: string, projectId: string | null) => {
               lateCount,
               totalRejections,
               huDetails,
+              symbolicGrade,
+              gradeMessage,
             };
           });
 

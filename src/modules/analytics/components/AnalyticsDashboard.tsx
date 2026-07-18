@@ -21,71 +21,8 @@ import {
   Calendar,
   Target,
 } from "lucide-react";
-
-// ─── Status chip helper ───────────────────────────────────────────────────────
-const StatusChip: React.FC<{ status: string }> = ({ status }) => {
-  const map: Record<string, string> = {
-    Backlog: "bg-zinc-800 text-zinc-400 border-zinc-700",
-    "En Progreso": "bg-blue-500/15 text-blue-400 border-blue-500/30",
-    "En Revisión": "bg-amber-500/15 text-amber-400 border-amber-500/30",
-    Completado: "bg-emerald-500/15 text-emerald-400 border-emerald-500/30",
-  };
-  return (
-    <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold border uppercase tracking-wider ${map[status] ?? "bg-zinc-800 text-zinc-400 border-zinc-700"}`}>
-      {status}
-    </span>
-  );
-};
-
-// ─── On-time badge helper ─────────────────────────────────────────────────────
-const OnTimeBadge: React.FC<{ onTime: boolean | null }> = ({ onTime }) => {
-  if (onTime === null)
-    return <span className="text-[9px] text-zinc-500 font-semibold italic">Pendiente</span>;
-  if (onTime)
-    return (
-      <span className="flex items-center gap-0.5 text-[9px] text-emerald-400 font-bold">
-        <CheckCircle2 className="w-3 h-3" /> A tiempo
-      </span>
-    );
-  return (
-    <span className="flex items-center gap-0.5 text-[9px] text-red-400 font-bold">
-      <XCircle className="w-3 h-3" /> Tarde
-    </span>
-  );
-};
-
-// ─── Criteria progress bar ────────────────────────────────────────────────────
-const CriteriaBar: React.FC<{ pct: number; done: number; total: number }> = ({ pct, done, total }) => (
-  <div className="flex items-center gap-2 min-w-[120px]">
-    <div className="flex-1 h-1.5 bg-zinc-800 rounded-full overflow-hidden">
-      <div
-        className={`h-1.5 rounded-full transition-all duration-300 ${pct === 100 ? "bg-emerald-500" : "bg-brand-purple"}`}
-        style={{ width: `${pct}%` }}
-      />
-    </div>
-    <span className="text-[9px] text-zinc-400 font-semibold whitespace-nowrap">{done}/{total}</span>
-  </div>
-);
-
-// ─── Date formatter helper ────────────────────────────────────────────────────
-const formatDate = (dateStr: string | null) => {
-  if (!dateStr) return "Sin fecha";
-  try {
-    const d = new Date(dateStr);
-    if (isNaN(d.getTime())) return dateStr;
-    const parts = dateStr.split("T")[0].split("-");
-    if (parts.length === 3) {
-      return `${parts[2]}/${parts[1]}/${parts[0]}`;
-    }
-    return d.toLocaleDateString("es-ES", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-    });
-  } catch {
-    return dateStr;
-  }
-};
+import { DonutChart } from "./DonutChart";
+import { StatusChip, OnTimeBadge, CriteriaBar, formatDate } from "./AnalyticsHelpers";
 
 export const AnalyticsDashboard: React.FC = () => {
   const { currentUser } = useAuth();
@@ -125,85 +62,17 @@ export const AnalyticsDashboard: React.FC = () => {
 
   if (!selectedCourse) return null;
 
-  // Colores minimalistas para el gráfico SVG Donut
-  const colors = ["#a78bfa", "#60a5fa", "#34d399", "#fbbf24", "#f87171"];
-
   // Renderizar Donut Chart SVG
   const renderDonutChart = () => {
-    if (!analytics || analytics.studentsAnalytics.length === 0) return null;
-
-    // Filtrar estudiantes con participación > 0
-    const studentsWithPart = analytics.studentsAnalytics.filter((s) => s.participation > 0);
-    if (studentsWithPart.length === 0) {
-      return (
-        <div className="flex flex-col items-center justify-center h-48 text-xs text-gray-500 italic">
-          Sin tareas completadas aún para generar el gráfico.
-        </div>
-      );
-    }
-
-    let accumulatedAngle = 0;
-    const radius = 55;
-    const circumference = 2 * Math.PI * radius;
-
-    return (
-      <div className="flex flex-col md:flex-row items-center justify-around gap-6 py-4">
-        {/* SVG Donut */}
-        <div className="relative w-40 h-40">
-          <svg className="w-full h-full transform -rotate-90" viewBox="0 0 140 140">
-            <circle cx="70" cy="70" r={radius} fill="transparent" stroke="rgba(255,255,255,0.02)" strokeWidth="16" />
-            {studentsWithPart.map((student, i) => {
-              const strokeDasharray = `${(student.participation / 100) * circumference} ${circumference}`;
-              const strokeDashoffset = -accumulatedAngle;
-              accumulatedAngle += (student.participation / 100) * circumference;
-              const color = colors[i % colors.length];
-
-              return (
-                <circle
-                  key={student.studentId}
-                  cx="70"
-                  cy="70"
-                  r={radius}
-                  fill="transparent"
-                  stroke={color}
-                  strokeWidth="16"
-                  strokeDasharray={strokeDasharray}
-                  strokeDashoffset={strokeDashoffset}
-                  strokeLinecap="round"
-                  className="transition-all duration-500"
-                />
-              );
-            })}
-          </svg>
-          <div className="absolute inset-0 flex flex-col items-center justify-center">
-            <span className="text-sm font-bold text-white">Participación</span>
-            <span className="text-[9px] text-gray-400 uppercase tracking-wider">Porcentaje</span>
-          </div>
-        </div>
-
-        {/* Leyenda */}
-        <div className="space-y-2 flex-1 max-w-[200px]">
-          {studentsWithPart.map((student, i) => (
-            <div key={student.studentId} className="flex items-center justify-between text-xs">
-              <div className="flex items-center gap-2 truncate">
-                <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: colors[i % colors.length] }} />
-                <span className="text-gray-300 truncate max-w-[120px]" title={student.name}>
-                  {student.name}
-                </span>
-              </div>
-              <span className="font-bold text-white">{student.participation}%</span>
-            </div>
-          ))}
-        </div>
-      </div>
-    );
+    if (!analytics) return null;
+    return <DonutChart studentsAnalytics={analytics.studentsAnalytics} />;
   };
 
   // Cálculo de Cumplimiento de Fechas Grupal
   const groupOnTime = analytics ? analytics.studentsAnalytics.reduce((acc, s) => acc + s.onTimeCount, 0) : 0;
   const groupLate = analytics ? analytics.studentsAnalytics.reduce((acc, s) => acc + s.lateCount, 0) : 0;
   const totalCompletedHUs = groupOnTime + groupLate;
-  const complianceRate = totalCompletedHUs > 0 ? Math.round((groupOnTime / totalCompletedHUs) * 100) : 100;
+  const complianceRate = totalCompletedHUs > 0 ? Math.round((groupOnTime / totalCompletedHUs) * 100) : 0;
 
   return (
     <div className="space-y-6">
@@ -257,7 +126,7 @@ export const AnalyticsDashboard: React.FC = () => {
       ) : (
         <div className="space-y-8">
           {/* Fila 1: Métricas de Rendimiento Grupal */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {/* Avance del Tablero */}
             <div className="p-5 bg-zinc-950 border border-zinc-800 rounded-2xl space-y-3 shadow-xs">
               <p className="text-[10px] text-zinc-500 dark:text-zinc-400 uppercase font-bold tracking-wider">Progreso de Historias de Usuario</p>
@@ -289,19 +158,7 @@ export const AnalyticsDashboard: React.FC = () => {
               </div>
             </div>
 
-            {/* Lead Time */}
-            <div className="p-5 bg-zinc-950 border border-zinc-800 rounded-2xl space-y-2 relative overflow-hidden shadow-xs">
-              <div className="absolute right-3 top-3 w-8 h-8 rounded-lg bg-brand-blue/10 flex items-center justify-center text-brand-blue">
-                <Clock className="w-4 h-4" />
-              </div>
-              <p className="text-[10px] text-zinc-500 dark:text-zinc-400 uppercase font-bold tracking-wider">Tiempo de Entrega Grupal</p>
-              <h3 className="text-2xl font-black text-zinc-800 dark:text-zinc-100 pt-1">
-                {analytics.leadTime} <span className="text-xs text-zinc-500 dark:text-zinc-400 font-normal">horas</span>
-              </h3>
-              <p className="text-[10px] text-zinc-500 dark:text-zinc-400 leading-relaxed">
-                Tiempo promedio desde que una Historia de Usuario se crea en el Backlog hasta que se aprueba como Completado.
-              </p>
-            </div>
+
 
             {/* Tasa de Devoluciones */}
             <div className="p-5 bg-zinc-950 border border-zinc-800 rounded-2xl space-y-2 relative overflow-hidden shadow-xs">
@@ -363,9 +220,9 @@ export const AnalyticsDashboard: React.FC = () => {
                   <thead>
                     <tr className="bg-zinc-900/50 text-zinc-500 dark:text-zinc-400 border-b border-zinc-800 font-semibold">
                       <th className="p-3">Estudiante</th>
-                      <th className="p-3 text-center">Historias Completadas</th>
+                      <th className="p-3 text-center">Tareas Completadas</th>
                       <th className="p-3 text-center">Participación</th>
-                      <th className="p-3">Índice de Procrastinación</th>
+                      <th className="p-3 text-center">Nota Simbólica</th>
                       <th className="p-3 text-center">Tiempo en Progreso</th>
                     </tr>
                   </thead>
@@ -398,36 +255,18 @@ export const AnalyticsDashboard: React.FC = () => {
                             <td className="p-3 text-center font-black text-brand-purple">
                               {student.participation}%
                             </td>
-                            <td className="p-3 space-y-1">
-                              <div className="flex items-center justify-between text-[10px]">
-                                <span
-                                  className={`font-semibold ${
-                                    student.procrastination > 50
-                                      ? "text-brand-rose"
-                                      : student.procrastination > 20
-                                      ? "text-brand-amber"
-                                      : "text-brand-emerald"
-                                  }`}
-                                >
-                                  {student.procrastination}%
+                            <td className="p-3 text-center">
+                              <div className="flex flex-col items-center justify-center">
+                                <span className={`text-sm font-black ${
+                                  student.symbolicGrade >= 4.0 ? 'text-brand-emerald' :
+                                  student.symbolicGrade >= 3.0 ? 'text-brand-blue' :
+                                  'text-brand-rose'
+                                }`}>
+                                  {student.symbolicGrade.toFixed(1)}
                                 </span>
-                                {student.procrastination > 50 && (
-                                  <span className="text-[8px] text-brand-rose bg-brand-rose/10 px-1 rounded uppercase font-bold animate-pulse">
-                                    ¡Procrastinador!
-                                  </span>
-                                )}
-                              </div>
-                              <div className="w-24 h-1.5 bg-zinc-200 dark:bg-zinc-800 rounded-full overflow-hidden">
-                                <div
-                                  className={`h-full rounded-full transition-all ${
-                                    student.procrastination > 50
-                                      ? "bg-brand-rose"
-                                      : student.procrastination > 20
-                                      ? "bg-brand-amber"
-                                      : "bg-brand-emerald"
-                                  }`}
-                                  style={{ width: `${student.procrastination}%` }}
-                                />
+                                <span className="text-[9px] uppercase font-bold tracking-wider text-zinc-500">
+                                  {student.gradeMessage}
+                                </span>
                               </div>
                             </td>
                             <td className="p-3 text-center">

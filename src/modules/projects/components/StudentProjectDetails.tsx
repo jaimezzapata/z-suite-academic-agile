@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import { useAuth } from "../../auth/hooks/useAuth";
 import { useDashboard } from "../../shared/components/Layout";
 import { projectService, studentService, Project, Student } from "../../shared/services/firebase";
-import { Briefcase, Users, Calendar, Clock, ArrowRight, Mail, User, Phone, BookOpen } from "lucide-react";
+import { Briefcase, Users, Calendar, Clock, ArrowRight, Mail, User, Phone, BookOpen, FileText, Pencil, Save, X } from "lucide-react";
 
 export const StudentProjectDetails: React.FC = () => {
   const { currentUser } = useAuth();
@@ -13,6 +13,15 @@ export const StudentProjectDetails: React.FC = () => {
   const [project, setProject] = useState<Project | null>(null);
   const [teamMembers, setTeamMembers] = useState<Student[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Construction Section State
+  const [isEditingConstruction, setIsEditingConstruction] = useState(false);
+  const [constructionData, setConstructionData] = useState({
+    introduction: "",
+    purpose: "",
+    objectives: "",
+  });
+  const [savingConstruction, setSavingConstruction] = useState(false);
 
   useEffect(() => {
     const fetchProjectData = async () => {
@@ -27,6 +36,13 @@ export const StudentProjectDetails: React.FC = () => {
         
         if (myProj) {
           setProject(myProj);
+          if (myProj.construction) {
+            setConstructionData({
+              introduction: myProj.construction.introduction || "",
+              purpose: myProj.construction.purpose || "",
+              objectives: myProj.construction.objectives || "",
+            });
+          }
           
           // Cargar todos los estudiantes del curso
           const allStudents = await studentService.getStudents(selectedCourse.id);
@@ -43,6 +59,20 @@ export const StudentProjectDetails: React.FC = () => {
 
     fetchProjectData();
   }, [currentUser, selectedCourse]);
+
+  const handleSaveConstruction = async () => {
+    if (!project) return;
+    setSavingConstruction(true);
+    try {
+      await projectService.updateProjectConstruction(project.id, constructionData);
+      setProject({ ...project, construction: constructionData });
+      setIsEditingConstruction(false);
+    } catch (e) {
+      console.error("Error al guardar construcción:", e);
+    } finally {
+      setSavingConstruction(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -120,6 +150,106 @@ export const StudentProjectDetails: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Sección de Construcción del Proyecto */}
+      <div className="p-6 bg-[#121214] border border-white/5 rounded-2xl space-y-4 shadow-xl">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/5 pb-4">
+          <div>
+            <h3 className="text-sm font-bold text-white flex items-center gap-2">
+              <FileText className="w-4 h-4 text-brand-purple" />
+              Generalidades del Proyecto (Construcción)
+            </h3>
+            <p className="text-[10px] text-gray-400 mt-1">Define los aspectos centrales y teóricos de tu proyecto ágil.</p>
+          </div>
+          {isEditingConstruction ? (
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => {
+                  setIsEditingConstruction(false);
+                  if (project.construction) {
+                    setConstructionData({
+                      introduction: project.construction.introduction || "",
+                      purpose: project.construction.purpose || "",
+                      objectives: project.construction.objectives || "",
+                    });
+                  }
+                }}
+                className="px-3 py-1.5 flex items-center gap-1.5 bg-zinc-800 hover:bg-zinc-700 text-white text-[10px] font-bold rounded-lg transition-colors cursor-pointer"
+                disabled={savingConstruction}
+              >
+                <X className="w-3 h-3" /> Cancelar
+              </button>
+              <button
+                onClick={handleSaveConstruction}
+                disabled={savingConstruction}
+                className="px-3 py-1.5 flex items-center gap-1.5 bg-brand-emerald hover:bg-emerald-500 text-black text-[10px] font-bold rounded-lg transition-colors cursor-pointer disabled:opacity-50"
+              >
+                <Save className="w-3 h-3" /> {savingConstruction ? "Guardando..." : "Guardar"}
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={() => setIsEditingConstruction(true)}
+              className="px-3 py-1.5 flex items-center gap-1.5 bg-brand-purple/10 hover:bg-brand-purple/20 text-brand-purple text-[10px] font-bold border border-brand-purple/20 rounded-lg transition-colors cursor-pointer self-start sm:self-auto"
+            >
+              <Pencil className="w-3 h-3" /> Editar Generalidades
+            </button>
+          )}
+        </div>
+
+        <div className="space-y-6 pt-2">
+          {/* Introducción */}
+          <div className="space-y-2">
+            <h4 className="text-xs font-bold text-gray-300 uppercase tracking-wider">Introducción</h4>
+            {isEditingConstruction ? (
+              <textarea
+                value={constructionData.introduction}
+                onChange={(e) => setConstructionData({ ...constructionData, introduction: e.target.value })}
+                placeholder="Escribe una breve introducción del proyecto..."
+                className="w-full h-24 bg-zinc-900 border border-zinc-800 rounded-xl p-3 text-xs text-zinc-100 focus:outline-none focus:border-brand-purple focus:ring-1 focus:ring-brand-purple/30 transition-all resize-none custom-scrollbar"
+              />
+            ) : (
+              <p className="text-xs text-zinc-400 whitespace-pre-wrap bg-zinc-900/40 p-4 rounded-xl border border-zinc-800">
+                {project.construction?.introduction || <span className="italic text-gray-600">No se ha definido la introducción.</span>}
+              </p>
+            )}
+          </div>
+
+          {/* Propósito */}
+          <div className="space-y-2">
+            <h4 className="text-xs font-bold text-gray-300 uppercase tracking-wider">Propósito del Proyecto</h4>
+            {isEditingConstruction ? (
+              <textarea
+                value={constructionData.purpose}
+                onChange={(e) => setConstructionData({ ...constructionData, purpose: e.target.value })}
+                placeholder="¿Cuál es el propósito o la justificación principal de este proyecto?"
+                className="w-full h-24 bg-zinc-900 border border-zinc-800 rounded-xl p-3 text-xs text-zinc-100 focus:outline-none focus:border-brand-purple focus:ring-1 focus:ring-brand-purple/30 transition-all resize-none custom-scrollbar"
+              />
+            ) : (
+              <p className="text-xs text-zinc-400 whitespace-pre-wrap bg-zinc-900/40 p-4 rounded-xl border border-zinc-800">
+                {project.construction?.purpose || <span className="italic text-gray-600">No se ha definido el propósito.</span>}
+              </p>
+            )}
+          </div>
+
+          {/* Objetivos */}
+          <div className="space-y-2">
+            <h4 className="text-xs font-bold text-gray-300 uppercase tracking-wider">Objetivos</h4>
+            {isEditingConstruction ? (
+              <textarea
+                value={constructionData.objectives}
+                onChange={(e) => setConstructionData({ ...constructionData, objectives: e.target.value })}
+                placeholder="Enumera los objetivos generales y específicos..."
+                className="w-full h-24 bg-zinc-900 border border-zinc-800 rounded-xl p-3 text-xs text-zinc-100 focus:outline-none focus:border-brand-purple focus:ring-1 focus:ring-brand-purple/30 transition-all resize-none custom-scrollbar"
+              />
+            ) : (
+              <p className="text-xs text-zinc-400 whitespace-pre-wrap bg-zinc-900/40 p-4 rounded-xl border border-zinc-800">
+                {project.construction?.objectives || <span className="italic text-gray-600">No se han definido los objetivos.</span>}
+              </p>
+            )}
+          </div>
+        </div>
+      </div>
 
       {/* Listado de Compañeros de Equipo */}
       <div className="space-y-3">

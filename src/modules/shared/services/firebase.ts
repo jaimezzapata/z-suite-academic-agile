@@ -188,6 +188,11 @@ export interface Project {
   max_members: number;
   members: string[]; // Listado de studentIds
   deadline?: string; // Fecha límite de entrega
+  construction?: {
+    introduction?: string;
+    purpose?: string;
+    objectives?: string;
+  };
 }
 
 export const projectService = {
@@ -219,6 +224,10 @@ export const projectService = {
 
   async updateProjectDeadline(projectId: string, deadline: string): Promise<void> {
     await updateDoc(doc(db, "projects", projectId), { deadline });
+  },
+
+  async updateProjectConstruction(projectId: string, construction: { introduction?: string; purpose?: string; objectives?: string; }): Promise<void> {
+    await updateDoc(doc(db, "projects", projectId), { construction });
   },
 
   // Transacción atómica para auto-inscripción
