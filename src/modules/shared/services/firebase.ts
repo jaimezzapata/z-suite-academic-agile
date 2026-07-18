@@ -356,6 +356,46 @@ export const projectService = {
   async updateProject(projectId: string, name: string, maxMembers: number): Promise<void> {
     await updateDoc(doc(db, "projects", projectId), { name, max_members: maxMembers });
   },
+
+  async unenrollAllFromProject(projectId: string): Promise<void> {
+    const batch = writeBatch(db);
+    
+    // 1. Vaciar miembros del proyecto
+    const projRef = doc(db, "projects", projectId);
+    batch.update(projRef, { members: [] });
+
+    // 2. Quitar projectId a todos los estudiantes que pertenezcan al proyecto
+    const q = query(collection(db, "students"), where("projectId", "==", projectId));
+    const snap = await getDocs(q);
+    snap.docs.forEach((studentDoc) => {
+      batch.update(studentDoc.ref, { projectId: null });
+    });
+
+    await batch.commit();
+  },
+
+  async unenrollAllFromCourse(courseId: string): Promise<void> {
+    const batch = writeBatch(db);
+
+    // 1. Vaciar miembros de todos los proyectos de este curso
+    const qProjects = query(collection(db, "projects"), where("courseId", "==", courseId));
+    const snapProjects = await getDocs(qProjects);
+    snapProjects.docs.forEach((projDoc) => {
+      batch.update(projDoc.ref, { members: [] });
+    });
+
+    // 2. Quitar projectId a todos los estudiantes de este curso que tengan un proyecto asignado
+    const qStudents = query(collection(db, "students"), where("courseId", "==", courseId));
+    const snapStudents = await getDocs(qStudents);
+    snapStudents.docs.forEach((studentDoc) => {
+      const studentData = studentDoc.data();
+      if (studentData.projectId) {
+         batch.update(studentDoc.ref, { projectId: null });
+      }
+    });
+
+    await batch.commit();
+  },
 };
 
 // ==========================================

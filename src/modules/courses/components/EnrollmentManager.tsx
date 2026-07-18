@@ -48,6 +48,9 @@ export const EnrollmentManager: React.FC = () => {
   const [actionError, setActionError] = useState<string | null>(null);
   const [showAssignmentImporter, setShowAssignmentImporter] = useState(false);
 
+  const [confirmUnenrollCourse, setConfirmUnenrollCourse] = useState(false);
+  const [confirmUnenrollProjectId, setConfirmUnenrollProjectId] = useState<string | null>(null);
+
   // Proyecto seleccionado para ventana modal de matriculación
   const [selectedProjectForModal, setSelectedProjectForModal] = useState<Project | null>(null);
 
@@ -201,6 +204,34 @@ export const EnrollmentManager: React.FC = () => {
     }
   };
 
+  const handleUnenrollAllCourse = () => {
+    if (!selectedCourse) return;
+    setConfirmUnenrollCourse(true);
+  };
+
+  const executeUnenrollAllCourse = async () => {
+    if (!selectedCourse) return;
+    try {
+      await projectService.unenrollAllFromCourse(selectedCourse.id);
+      loadData();
+    } catch (e: any) {
+      setActionError(e.message || "Error al vaciar los grupos del curso.");
+    }
+  };
+
+  const handleUnenrollProject = (projectId: string) => {
+    setConfirmUnenrollProjectId(projectId);
+  };
+
+  const executeUnenrollProject = async (projectId: string) => {
+    try {
+      await projectService.unenrollAllFromProject(projectId);
+      loadData();
+    } catch (e: any) {
+      setActionError(e.message || "Error al vaciar el grupo.");
+    }
+  };
+
   // Filtros de búsqueda para el modal
   const filteredAvailableStudents = laggingStudents.filter(
     (s) =>
@@ -271,6 +302,16 @@ export const EnrollmentManager: React.FC = () => {
             >
               <Sparkles className="w-3 h-3 text-brand-blue" />
               {loadingAutoComplete ? "Matriculando..." : "Matrícula Automática"}
+            </button>
+          )}
+
+          {projects.length > 0 && (
+            <button
+              onClick={handleUnenrollAllCourse}
+              className="flex items-center gap-1.5 px-2.5 py-1.5 bg-brand-rose/10 hover:bg-brand-rose/15 border border-brand-rose/20 text-brand-rose text-[11px] font-bold rounded-xl transition-all cursor-pointer shadow-xs"
+              title="Saca a todos los estudiantes de todos los grupos"
+            >
+              Vaciar Todos los Grupos
             </button>
           )}
 
@@ -460,6 +501,13 @@ export const EnrollmentManager: React.FC = () => {
                           >
                             <Trash2 className="w-3 h-3" />
                           </button>
+                          <button
+                            onClick={() => handleUnenrollProject(project.id)}
+                            className="text-[9px] px-2 py-1 bg-white/2 border border-white/5 text-gray-500 rounded hover:text-brand-orange hover:border-brand-orange/25 transition-all cursor-pointer opacity-0 group-hover:opacity-100"
+                            title="Desmatricular a todos los estudiantes de este grupo"
+                          >
+                            Vaciar
+                          </button>
                         </div>
                       </div>
                     </>
@@ -611,6 +659,36 @@ export const EnrollmentManager: React.FC = () => {
           }
         }}
         onCancel={() => setConfirmDeleteProjectId(null)}
+      />
+
+      <ConfirmDialog
+        isOpen={confirmUnenrollCourse}
+        title="Vaciar Todos los Grupos"
+        message="¿Estás seguro de que deseas vaciar TODOS los grupos? Todos los estudiantes quedarán como rezagados."
+        confirmText="Vaciar Todo"
+        cancelText="Cancelar"
+        isDanger={true}
+        onConfirm={async () => {
+          await executeUnenrollAllCourse();
+          setConfirmUnenrollCourse(false);
+        }}
+        onCancel={() => setConfirmUnenrollCourse(false)}
+      />
+
+      <ConfirmDialog
+        isOpen={!!confirmUnenrollProjectId}
+        title="Vaciar Grupo"
+        message="¿Estás seguro de que deseas vaciar este grupo? Todos sus integrantes pasarán a ser rezagados."
+        confirmText="Vaciar Grupo"
+        cancelText="Cancelar"
+        isDanger={true}
+        onConfirm={async () => {
+          if (confirmUnenrollProjectId) {
+            await executeUnenrollProject(confirmUnenrollProjectId);
+            setConfirmUnenrollProjectId(null);
+          }
+        }}
+        onCancel={() => setConfirmUnenrollProjectId(null)}
       />
     </div>
   );
