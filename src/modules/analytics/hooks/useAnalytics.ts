@@ -9,7 +9,8 @@ import {
   Student,
   Project,
   Task,
-  ActivityLog
+  ActivityLog,
+  TimeReport
 } from "../../shared/services/firebase";
 import {
   calculateParticipation,
@@ -56,6 +57,8 @@ export interface StudentAnalytics {
   huDetails: HUProgress[];
   symbolicGrade: number;
   gradeMessage: string;
+  timeReports: TimeReport[];
+  totalTimeSpentMinutes: number;
 }
 
 export interface GroupAnalytics {
@@ -64,6 +67,7 @@ export interface GroupAnalytics {
   completedCount: number;
   totalCount: number;
   studentsAnalytics: StudentAnalytics[];
+  totalGroupTimeSpentMinutes: number;
 }
 
 export const useAnalytics = (courseId: string, projectId: string | null) => {
@@ -82,6 +86,7 @@ export const useAnalytics = (courseId: string, projectId: string | null) => {
 
     let unsubscribeTasks: () => void = () => {};
     let unsubscribeLogs: () => void = () => {};
+    let unsubscribeTimeReports: () => void = () => {};
     let active = true;
 
     const setupListeners = async () => {
@@ -101,6 +106,7 @@ export const useAnalytics = (courseId: string, projectId: string | null) => {
 
         let currentTasks: Task[] = [];
         let currentLogs: ActivityLog[] = [];
+        let currentTimeReports: TimeReport[] = [];
 
         const runCalculation = () => {
           if (!active) return;
@@ -157,6 +163,10 @@ export const useAnalytics = (courseId: string, projectId: string | null) => {
             const overallProgress = calculateOverallProgress(studentHuIds, projectTasks);
             const studentCompleted = completedTasks.filter((t) => t.assignedTo === student.id);
 
+            // Tiempos reportados por el estudiante
+            const studentTimeReports = currentTimeReports.filter((tr) => tr.studentId === student.id);
+            const totalTimeSpentMinutes = studentTimeReports.reduce((acc, tr) => acc + tr.timeSpentMinutes, 0);
+
             // Cálculo de Nota Simbólica
             let symbolicGrade = 0;
             if (studentHUs.length > 0 || studentCompleted.length > 0) {
@@ -191,8 +201,12 @@ export const useAnalytics = (courseId: string, projectId: string | null) => {
               huDetails,
               symbolicGrade,
               gradeMessage,
+              timeReports: studentTimeReports,
+              totalTimeSpentMinutes,
             };
           });
+
+          const totalGroupTimeSpentMinutes = studentsAnalytics.reduce((acc, s) => acc + s.totalTimeSpentMinutes, 0);
 
           setAnalytics({
             leadTime,
@@ -200,6 +214,7 @@ export const useAnalytics = (courseId: string, projectId: string | null) => {
             completedCount: activeHUs.filter((t) => t.status === "Completado").length,
             totalCount: activeHUs.length,
             studentsAnalytics,
+            totalGroupTimeSpentMinutes,
           });
           setLoading(false);
         };
@@ -245,6 +260,29 @@ export const useAnalytics = (courseId: string, projectId: string | null) => {
           }
         );
 
+        // Escuchar reportes de tiempo
+        const qTimeReports = query(
+          collection(db, "time_reports"),
+          where("projectId", "==", projectId)
+        );
+        unsubscribeTimeReports = onSnapshot(
+          qTimeReports,
+          (snapshot) => {
+            const tr = snapshot.docs.map((doc) => ({
+              id: doc.id,
+              ...doc.data(),
+            })) as TimeReport[];
+            currentTimeReports = [...tr].sort(
+              (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+            );
+            runCalculation();
+          },
+          (err) => {
+            console.error("Error en time_reports onSnapshot:", err);
+            setError("Error al suscribirse a reportes de tiempo.");
+          }
+        );
+
       } catch (err: any) {
         if (active) {
           setError(err.message || "Error al inicializar suscripciones.");
@@ -259,6 +297,7 @@ export const useAnalytics = (courseId: string, projectId: string | null) => {
       active = false;
       unsubscribeTasks();
       unsubscribeLogs();
+      unsubscribeTimeReports();
     };
   }, [courseId, projectId]);
 

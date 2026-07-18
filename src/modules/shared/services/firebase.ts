@@ -139,14 +139,32 @@ export const studentService = {
 
   async importStudents(students: Omit<Student, "role" | "projectId">[]): Promise<void> {
     const batch = writeBatch(db);
-    students.forEach((student) => {
+    for (const student of students) {
       const studentDocRef = doc(db, "students", student.id);
-      batch.set(studentDocRef, {
-        ...student,
-        projectId: null,
-        role: "estudiante",
-      });
-    });
+      const studentSnap = await getDoc(studentDocRef);
+
+      if (studentSnap.exists()) {
+        const existingData = studentSnap.data();
+        // Si el estudiante ya pertenece a OTRO curso, lo saltamos sin bloquear a los demás
+        if (existingData.courseId !== student.courseId) {
+          continue;
+        }
+        
+        // Si ya pertenece a este mismo curso, lo actualizamos pero conservamos su grupo actual si tiene
+        batch.set(studentDocRef, {
+          ...student,
+          projectId: existingData.projectId || null,
+          role: "estudiante",
+        }, { merge: true });
+      } else {
+        // Es un estudiante nuevo
+        batch.set(studentDocRef, {
+          ...student,
+          projectId: null,
+          role: "estudiante",
+        });
+      }
+    }
     await batch.commit();
   },
 
@@ -175,6 +193,22 @@ export const studentService = {
   async updateStudent(studentId: string, updatedFields: Partial<Student>): Promise<void> {
     await updateDoc(doc(db, "students", studentId), updatedFields);
   },
+
+  async deleteAllStudentsFromCourse(courseId: string): Promise<void> {
+    // Primero, desasignarlos de los proyectos (limpia tareas y projects.members)
+    await projectService.unenrollAllFromCourse(courseId);
+
+    // Luego, eliminar los documentos de los estudiantes
+    const qStudents = query(collection(db, "students"), where("courseId", "==", courseId));
+    const snapStudents = await getDocs(qStudents);
+    
+    const batch = writeBatch(db);
+    snapStudents.docs.forEach(doc => {
+      batch.delete(doc.ref);
+    });
+    
+    await batch.commit();
+  }
 };
 
 // ==========================================
@@ -522,6 +556,13 @@ export const boardService = {
       batch.delete(d.ref);
     });
 
+    // 3. Obtener y eliminar todos los time reports
+    const qTime = query(collection(db, "time_reports"), where("projectId", "==", projectId));
+    const snapTime = await getDocs(qTime);
+    snapTime.docs.forEach((d) => {
+      batch.delete(d.ref);
+    });
+
     await batch.commit();
   },
 
@@ -573,9 +614,65 @@ export const userService = {
       ...doc.data(),
     })) as UserAccount[];
   },
-
   async createUser(user: UserAccount): Promise<UserAccount> {
     await setDoc(doc(db, "users", user.email), user);
     return user;
+  }
+};
+
+// ==========================================
+// 6. SERVICIOS DE REPORTE DE TIEMPOS
+// ==========================================
+
+export interface TimeReport {
+  id: string;
+  projectId: string;
+  courseId: string;
+  studentId: string;
+  studentName: string;
+  timeSpentMinutes: number;
+  observation: string;
+  timestamp: string;
+}
+
+export const timeReportService = {
+  async createTimeReport(report: Omit<TimeReport, "id" | "timestamp">): Promise<TimeReport> {
+    const newReport: TimeReport = {
+      ...report,
+      id: Math.random().toString(36).substring(2, 11),
+      timestamp: new Date().toISOString(),
+    };
+    await addDoc(collection(db, "time_reports"), newReport);
+    return newReport;
+  },
+
+  async getTimeReportsByProject(projectId: string): Promise<TimeReport[]> {
+    const q = query(collection(db, "time_reports"), where("projectId", "==", projectId));
+    const querySnapshot = await getDocs(q);
+    return querySnapshot.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+    })) as TimeReport[];
+  },
+
+  async getTodayTimeSpentMinutes(studentId: string): Promise<number> {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Inicio del día
+
+    // La consulta se hace filtrando localmente el timestamp ya que no tenemos índice compuesto, 
+    // pero idealmente deberíamos tener una consulta simple.
+    // Usaremos studentId y filtraremos por fecha en el cliente por ser pocos registros.
+    const q = query(collection(db, "time_reports"), where("studentId", "==", studentId));
+    const querySnapshot = await getDocs(q);
+    
+    let totalMinutes = 0;
+    querySnapshot.forEach((doc) => {
+      const data = doc.data() as TimeReport;
+      if (new Date(data.timestamp) >= today) {
+        totalMinutes += data.timeSpentMinutes;
+      }
+    });
+    
+    return totalMinutes;
   }
 };

@@ -1,5 +1,5 @@
 import React from "react";
-import { Briefcase, Upload, Download, Plus } from "lucide-react";
+import { Briefcase, Upload, Download, Plus, Clock } from "lucide-react";
 import { Project } from "../../shared/services/firebase";
 import { CurrentUser } from "../../auth/hooks/useAuth";
 
@@ -14,6 +14,7 @@ interface BoardHeaderProps {
   handleImportJson: () => void;
   handleExportJson: () => void;
   handleOpenCreate: () => void;
+  handleOpenTimeReport?: () => void;
 }
 
 export const BoardHeader: React.FC<BoardHeaderProps> = ({
@@ -26,7 +27,8 @@ export const BoardHeader: React.FC<BoardHeaderProps> = ({
   handleFileChange,
   handleImportJson,
   handleExportJson,
-  handleOpenCreate
+  handleOpenCreate,
+  handleOpenTimeReport
 }) => {
   return (
     <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-white/5 pb-4">
@@ -88,6 +90,18 @@ export const BoardHeader: React.FC<BoardHeaderProps> = ({
               Exportar
             </button>
           </>
+        )}
+
+        {selectedProjectId && currentUser?.role === "estudiante" && handleOpenTimeReport && (
+          <button
+            onClick={handleOpenTimeReport}
+            type="button"
+            className="flex items-center gap-1.5 px-3.5 py-2 bg-brand-emerald/10 border border-brand-emerald/20 text-brand-emerald hover:bg-brand-emerald hover:text-zinc-900 text-xs font-semibold rounded-xl transition-all cursor-pointer shadow-sm"
+            title="Reportar tiempo dedicado al proyecto"
+          >
+            <Clock className="w-3.5 h-3.5" />
+            Reportar Tiempo
+          </button>
         )}
 
         {selectedProjectId && activeTab === "backlog" && (

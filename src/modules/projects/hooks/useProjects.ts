@@ -161,23 +161,16 @@ export const useProjects = () => {
           batch.set(newProjRef, targetProj);
         }
 
+        // Si el estudiante ya estaba en un grupo y no es el mismo grupo destino,
+        // entonces lo ignoramos (saltamos) para que no se reasigne y no bloquee a los demás.
+        if (student.projectId && student.projectId !== targetProj.id) {
+          continue;
+        }
+
         // Agregar estudiante a la lista de adición para este proyecto
         const toAdd = projectMembersToAdd.get(targetProj.id) || [];
         toAdd.push(student.id);
         projectMembersToAdd.set(targetProj.id, toAdd);
-
-        // Si el estudiante ya estaba en un grupo y no es el mismo grupo destino,
-        // necesitamos quitarlo de los miembros de ese grupo origen.
-        if (student.projectId && student.projectId !== targetProj.id) {
-          // Buscamos el proyecto origen en nuestro map local
-          const sourceProj = Array.from(localProjectsMap.values()).find(p => p.id === student.projectId);
-          if (sourceProj) {
-            sourceProj.members = sourceProj.members.filter(id => id !== student.id);
-            // Actualizar el proyecto origen en Firestore
-            const sourceProjRef = doc(db, "projects", sourceProj.id);
-            batch.update(sourceProjRef, { members: sourceProj.members });
-          }
-        }
       }
 
       // Procesar asignaciones finales y validar límites

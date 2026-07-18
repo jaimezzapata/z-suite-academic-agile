@@ -35,7 +35,10 @@ export const ProjectEnrollment: React.FC = () => {
   }, [selectedCourse]);
 
   const handleJoin = async (projectId: string) => {
-    if (!currentUser) return;
+    if (!currentUser || !selectedCourse) return;
+    if (selectedCourse.inscriptionsStatus === "closed") {
+      return;
+    }
     setLoadingProjectId(projectId);
     
     const success = await joinProject(currentUser.id, projectId);
@@ -55,6 +58,8 @@ export const ProjectEnrollment: React.FC = () => {
 
   if (!selectedCourse) return null;
 
+  const isClosed = selectedCourse.inscriptionsStatus === "closed";
+
   return (
     <div className="space-y-6 max-w-4xl mx-auto">
       <div className="border-b border-white/5 pb-4">
@@ -63,7 +68,9 @@ export const ProjectEnrollment: React.FC = () => {
           Auto-Inscripción de Equipos
         </h2>
         <p className="text-xs text-gray-400 mt-1">
-          Las inscripciones están abiertas. Selecciona un grupo de trabajo libre para unirte a tu proyecto.
+          {isClosed 
+            ? "El docente ha cerrado temporalmente el proceso de matrícula de estudiantes a proyectos."
+            : "Las inscripciones están abiertas. Selecciona un grupo de trabajo libre para unirte a tu proyecto."}
         </p>
       </div>
 
@@ -132,7 +139,14 @@ export const ProjectEnrollment: React.FC = () => {
                 </div>
 
                 <div className="pt-4 border-t border-white/5">
-                  {isFull ? (
+                  {isClosed ? (
+                    <button
+                      disabled
+                      className="w-full text-center py-2 bg-zinc-950 text-gray-600 rounded-xl text-xs font-semibold cursor-not-allowed"
+                    >
+                      Inscripciones Cerradas
+                    </button>
+                  ) : isFull ? (
                     <button
                       disabled
                       className="w-full text-center py-2 bg-zinc-950 text-gray-600 rounded-xl text-xs font-semibold cursor-not-allowed"

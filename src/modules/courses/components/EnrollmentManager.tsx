@@ -661,18 +661,17 @@ export const EnrollmentManager: React.FC = () => {
         onCancel={() => setConfirmDeleteProjectId(null)}
       />
 
+      {/* Confirmación para Vaciar Todo el Curso */}
       <ConfirmDialog
         isOpen={confirmUnenrollCourse}
-        title="Vaciar Todos los Grupos"
-        message="¿Estás seguro de que deseas vaciar TODOS los grupos? Todos los estudiantes quedarán como rezagados."
-        confirmText="Vaciar Todo"
-        cancelText="Cancelar"
-        isDanger={true}
-        onConfirm={async () => {
-          await executeUnenrollAllCourse();
+        title="¿Vaciar todos los grupos del curso?"
+        message="Esta acción removerá a TODOS los estudiantes de sus grupos respectivos y dejará las historias de usuario y tareas huérfanas sin asignación. No se eliminarán los estudiantes del curso."
+        onConfirm={() => {
+          executeUnenrollAllCourse();
           setConfirmUnenrollCourse(false);
         }}
         onCancel={() => setConfirmUnenrollCourse(false)}
+        isDanger={true}
       />
 
       <ConfirmDialog
@@ -703,6 +702,7 @@ export const StudentRegistry: React.FC = () => {
   const [students, setStudents] = useState<Student[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [confirmDeleteStudentId, setConfirmDeleteStudentId] = useState<string | null>(null);
+  const [confirmDeleteAllStudents, setConfirmDeleteAllStudents] = useState(false);
   const [showImporter, setShowImporter] = useState(false);
   const [searchStudentQuery, setSearchStudentQuery] = useState("");
   const [actionError, setActionError] = useState<string | null>(null);
@@ -746,6 +746,16 @@ export const StudentRegistry: React.FC = () => {
       loadData();
     } catch (err: any) {
       setActionError(err.message || "Error al eliminar estudiante");
+    }
+  };
+
+  const executeDeleteAllStudentsCourse = async () => {
+    if (!selectedCourse) return;
+    try {
+      await studentService.deleteAllStudentsFromCourse(selectedCourse.id);
+      loadData();
+    } catch (e: any) {
+      setActionError(e.message || "Error al eliminar estudiantes del curso.");
     }
   };
 
@@ -844,13 +854,24 @@ export const StudentRegistry: React.FC = () => {
             <p className="text-[10px] text-gray-400 mt-0.5">Modifica o elimina registros académicos en el curso.</p>
           </div>
 
-          <input
-            type="text"
-            placeholder="Buscar por nombre o CC..."
-            value={searchStudentQuery}
-            onChange={(e) => setSearchStudentQuery(e.target.value)}
-            className="text-xs bg-zinc-950 border border-white/5 text-gray-200 rounded-lg px-3 py-1.5 focus:outline-none focus:border-white placeholder-gray-600 w-full sm:w-64"
-          />
+          <div className="flex items-center gap-2 w-full sm:w-auto">
+            <input
+              type="text"
+              placeholder="Buscar por nombre o CC..."
+              value={searchStudentQuery}
+              onChange={(e) => setSearchStudentQuery(e.target.value)}
+              className="text-xs bg-zinc-950 border border-white/5 text-gray-200 rounded-lg px-3 py-1.5 focus:outline-none focus:border-white placeholder-gray-600 w-full sm:w-64"
+            />
+            {students.length > 0 && (
+              <button
+                onClick={() => setConfirmDeleteAllStudents(true)}
+                className="flex items-center gap-1.5 px-2.5 py-1.5 bg-brand-rose/10 hover:bg-brand-rose/15 border border-brand-rose/20 text-brand-rose text-[11px] font-bold rounded-xl transition-all cursor-pointer shadow-xs whitespace-nowrap"
+                title="Elimina a todos los estudiantes de la base de datos de este curso"
+              >
+                Eliminar Todos
+              </button>
+            )}
+          </div>
         </div>
 
         <div className="overflow-y-auto max-h-[calc(100vh-280px)] custom-scrollbar space-y-2 pr-1">
@@ -979,6 +1000,19 @@ export const StudentRegistry: React.FC = () => {
           }
         }}
         onCancel={() => setConfirmDeleteStudentId(null)}
+      />
+
+      {/* Confirmación para Eliminar Todos los Estudiantes del Curso */}
+      <ConfirmDialog
+        isOpen={confirmDeleteAllStudents}
+        title="¿Eliminar todos los estudiantes del curso?"
+        message="Esta acción ELIMINARÁ DEFINITIVAMENTE a todos los estudiantes de este curso. Serán removidos de sus grupos, sus tareas quedarán desasignadas y sus cuentas para este curso desaparecerán."
+        onConfirm={() => {
+          executeDeleteAllStudentsCourse();
+          setConfirmDeleteAllStudents(false);
+        }}
+        onCancel={() => setConfirmDeleteAllStudents(false)}
+        isDanger={true}
       />
     </div>
   );

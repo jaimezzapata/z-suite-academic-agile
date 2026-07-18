@@ -6,10 +6,11 @@ import { useDashboard } from "../../shared/components/Layout";
 import { useBoard, useTasksListener } from "../hooks/useBoard";
 import { useKanbanDragAndDrop } from "../hooks/useKanbanDragAndDrop";
 import { exportTasksToJson, parseImportedJson } from "../utils/jsonImporterExporter";
-import { projectService, studentService, Student, Project, Task } from "../../shared/services/firebase";
+import { projectService, studentService, timeReportService, Student, Project, Task } from "../../shared/services/firebase";
 
 import { CardDetailModal } from "./CardDetailModal";
 import { FeedbackModal } from "./FeedbackModal";
+import { TimeReportModal } from "./TimeReportModal";
 
 import { AlertCircle, ClipboardList, FolderKanban, FileText } from "lucide-react";
 import { toast } from "sonner";
@@ -46,6 +47,8 @@ export const KanbanBoard: React.FC = () => {
   const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
   const [taskPendingRejection, setTaskPendingRejection] = useState<Task | null>(null);
   const [pendingTargetStatus, setPendingTargetStatus] = useState<Task["status"] | null>(null);
+
+  const [isTimeReportOpen, setIsTimeReportOpen] = useState(false);
 
   const loadBoardData = async () => {
     if (!selectedCourse) return;
@@ -224,6 +227,41 @@ export const KanbanBoard: React.FC = () => {
       .substring(0, 2);
   };
 
+  const handleSaveTimeReport = async (hours: number, minutes: number, observation: string) => {
+    if (!currentUser || !selectedCourse || !selectedProjectId) return;
+    try {
+      const requestedMinutes = (hours * 60) + minutes;
+      
+      // Validar máximo 4 horas por día
+      const todayMinutes = await timeReportService.getTodayTimeSpentMinutes(currentUser.id);
+      if (todayMinutes + requestedMinutes > 240) {
+        const remainingMinutes = 240 - todayMinutes;
+        if (remainingMinutes <= 0) {
+          throw new Error("Ya has alcanzado el límite máximo de 4 horas de trabajo para hoy.");
+        } else {
+          const remH = Math.floor(remainingMinutes / 60);
+          const remM = remainingMinutes % 60;
+          throw new Error(`Solo te quedan ${remH}h ${remM}m disponibles para reportar hoy (límite de 4 horas/día).`);
+        }
+      }
+
+      await timeReportService.createTimeReport({
+        projectId: selectedProjectId,
+        courseId: selectedCourse.id,
+        studentId: currentUser.id,
+        studentName: currentUser.name,
+        timeSpentMinutes: (hours * 60) + minutes,
+        observation: observation
+      });
+      toast.success("Tiempo reportado exitosamente.");
+    } catch (e: any) {
+      console.error(e);
+      // Extraemos el mensaje de error si existe para lanzarlo hacia el TimeReportModal,
+      // o usamos toast.error como fallback, o simplemente lanzamos para que el modal lo capture.
+      throw new Error(e.message || "Error al reportar el tiempo.");
+    }
+  };
+
   return (
     <div className="space-y-6">
       <BoardHeader 
@@ -276,6 +314,7 @@ export const KanbanBoard: React.FC = () => {
         handleImportJson={() => document.getElementById("import-json-input")?.click()}
         handleExportJson={() => activeProject && exportTasksToJson(tasks, students, activeProject)}
         handleOpenCreate={handleOpenCreate}
+        handleOpenTimeReport={isStudent ? () => setIsTimeReportOpen(true) : undefined}
       />
 
       {boardError && (
@@ -393,6 +432,14 @@ export const KanbanBoard: React.FC = () => {
           }}
           onConfirm={confirmRejection}
           cardTitle={taskPendingRejection.title}
+        />
+      )}
+
+      {isTimeReportOpen && (
+        <TimeReportModal
+          isOpen={isTimeReportOpen}
+          onClose={() => setIsTimeReportOpen(false)}
+          onSave={handleSaveTimeReport}
         />
       )}
     </div>

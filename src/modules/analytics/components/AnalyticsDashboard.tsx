@@ -167,7 +167,7 @@ export const AnalyticsDashboard: React.FC = () => {
       ) : (
         <div className="space-y-8">
           {/* Fila 1: Métricas de Rendimiento Grupal */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {/* Avance del Tablero */}
             <div className="p-5 bg-zinc-950 border border-zinc-800 rounded-2xl space-y-3 shadow-xs">
               <p className="text-[10px] text-zinc-500 dark:text-zinc-400 uppercase font-bold tracking-wider">Progreso de Historias de Usuario</p>
@@ -236,6 +236,20 @@ export const AnalyticsDashboard: React.FC = () => {
               </h3>
               <p className="text-[10px] text-zinc-500 dark:text-zinc-400 leading-relaxed">
                 Porcentaje de Historias de Usuario completadas que fueron entregadas en o antes de su fecha límite asignada.
+              </p>
+            </div>
+
+            {/* Tiempo Total Invertido */}
+            <div className="p-5 bg-zinc-950 border border-zinc-800 rounded-2xl space-y-2 relative overflow-hidden shadow-xs">
+              <div className="absolute right-3 top-3 w-8 h-8 rounded-lg bg-brand-blue/10 flex items-center justify-center text-brand-blue">
+                <Clock className="w-4 h-4" />
+              </div>
+              <p className="text-[10px] text-zinc-500 dark:text-zinc-400 uppercase font-bold tracking-wider">Tiempo Invertido Grupal</p>
+              <h3 className="text-2xl font-black pt-1 text-zinc-800 dark:text-zinc-100">
+                {Math.floor((analytics.totalGroupTimeSpentMinutes || 0) / 60)}h {(analytics.totalGroupTimeSpentMinutes || 0) % 60}m
+              </h3>
+              <p className="text-[10px] text-zinc-500 dark:text-zinc-400 leading-relaxed">
+                Tiempo total acumulado reportado por todos los integrantes del grupo durante el proyecto.
               </p>
             </div>
           </div>
@@ -431,6 +445,34 @@ export const AnalyticsDashboard: React.FC = () => {
                                       </div>
                                     )}
                                   </div>
+
+                                  {/* Listado de Tiempos Reportados */}
+                                  <div className="space-y-2 mt-4 pt-4 border-t border-zinc-800">
+                                    <div className="flex items-center justify-between">
+                                      <p className="text-xs font-bold text-zinc-700 dark:text-zinc-300 flex items-center gap-2">
+                                        <Clock className="w-4 h-4 text-brand-blue" />
+                                        Tiempos Reportados ({Math.floor(student.totalTimeSpentMinutes / 60)}h {student.totalTimeSpentMinutes % 60}m)
+                                      </p>
+                                    </div>
+                                    {(!student.timeReports || student.timeReports.length === 0) ? (
+                                      <p className="text-xs text-zinc-500 italic p-2">Este estudiante no ha reportado tiempos en este proyecto.</p>
+                                    ) : (
+                                      <div className="space-y-2 max-h-64 overflow-y-auto pr-1 custom-scrollbar">
+                                        {student.timeReports.map((tr) => (
+                                          <div key={tr.id} className="p-3 bg-zinc-950 border border-zinc-800 shadow-sm rounded-xl flex flex-col gap-2 text-xs hover:border-zinc-700 transition-colors">
+                                            <div className="flex items-center justify-between border-b border-zinc-800 pb-2">
+                                              <span className="font-bold text-zinc-300">
+                                                {Math.floor(tr.timeSpentMinutes / 60)}h {tr.timeSpentMinutes % 60}m
+                                              </span>
+                                              <span className="text-[10px] text-zinc-500">{formatDate(tr.timestamp)}</span>
+                                            </div>
+                                            <p className="text-zinc-400 italic">"{tr.observation}"</p>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    )}
+                                  </div>
+
                                 </div>
                               </td>
                             </tr>
