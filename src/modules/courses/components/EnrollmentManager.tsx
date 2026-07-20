@@ -386,28 +386,34 @@ export const EnrollmentManager: React.FC = () => {
                       setSelectedProjectForModal(project);
                     }
                   }}
-                  className={`p-5 bg-[#121214] border rounded-2xl flex flex-col justify-between h-[220px] cursor-pointer transition-all duration-200 hover:border-brand-purple/25 hover:bg-white/1 relative group ${
-                    isEditing ? "border-white/20 bg-zinc-950" : "border-white/5 hover:shadow-lg hover:shadow-brand-purple/5"
+                  className={`p-5 bg-[#121214] border rounded-2xl flex flex-col justify-between min-h-[240px] cursor-pointer transition-all duration-300 relative group overflow-hidden ${
+                    isEditing ? "border-white/20 bg-zinc-950" : "border-white/5 hover:border-brand-purple/40 hover:bg-[#161619] hover:shadow-xl hover:shadow-brand-purple/10 hover:-translate-y-1"
                   }`}
                 >
+                  {/* Subtle top gradient accent */}
+                  <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-brand-purple to-brand-blue opacity-20 group-hover:opacity-100 transition-opacity"></div>
+                  
                   {isEditing ? (
                     <form
                       onSubmit={(e) => handleSaveProjectEdit(e, project.id)}
-                      className="space-y-2 w-full h-full flex flex-col justify-between"
+                      className="space-y-2 w-full h-full flex flex-col justify-between relative z-10"
                       onClick={(e) => e.stopPropagation()}
                     >
-                      <div className="space-y-2">
-                        <label className="text-[9px] text-gray-500 uppercase font-semibold block">Nombre del Grupo</label>
-                        <input
-                          type="text"
-                          required
-                          value={editProjectName}
-                          onChange={(e) => setEditProjectName(e.target.value)}
-                          className="w-full text-xs bg-zinc-900 border border-white/5 text-white rounded px-2.5 py-1.5 focus:outline-none"
-                          placeholder="Nombre del Grupo"
-                        />
-                        <div className="flex items-center justify-between">
-                          <label className="text-[9px] text-gray-500 uppercase font-semibold">Cupo Máximo</label>
+                      <div className="space-y-3">
+                        <label className="text-[10px] text-gray-400 uppercase font-bold block tracking-wider">Editar Grupo</label>
+                        <div>
+                          <p className="text-[9px] text-gray-500 mb-1">Nombre</p>
+                          <input
+                            type="text"
+                            required
+                            value={editProjectName}
+                            onChange={(e) => setEditProjectName(e.target.value)}
+                            className="w-full text-xs bg-zinc-950 border border-white/10 focus:border-brand-purple text-white rounded-lg px-3 py-2 focus:outline-none transition-colors"
+                            placeholder="Nombre del Grupo"
+                          />
+                        </div>
+                        <div className="flex items-center justify-between bg-zinc-900/50 p-2 rounded-lg border border-white/5">
+                          <label className="text-[10px] text-gray-400 font-semibold">Cupo Máximo</label>
                           <input
                             type="number"
                             min="1"
@@ -415,102 +421,138 @@ export const EnrollmentManager: React.FC = () => {
                             required
                             value={editProjectCapacity}
                             onChange={(e) => setEditProjectCapacity(parseInt(e.target.value) || 1)}
-                            className="w-16 text-xs bg-zinc-900 border border-white/5 text-white rounded px-1.5 py-0.5 text-center focus:outline-none"
+                            className="w-16 text-xs bg-zinc-950 border border-white/10 focus:border-brand-purple text-white rounded-lg px-2 py-1 text-center focus:outline-none transition-colors"
                           />
                         </div>
                       </div>
-                      <div className="flex justify-end gap-1">
+                      <div className="flex justify-end gap-2 mt-4">
                         <button
                           type="button"
                           onClick={() => setEditingProjectId(null)}
-                          className="px-2 py-0.5 text-[9px] bg-zinc-800 text-gray-400 rounded cursor-pointer"
+                          className="px-3 py-1.5 text-[10px] bg-zinc-800 hover:bg-zinc-700 text-gray-300 font-medium rounded-lg cursor-pointer transition-colors"
                         >
                           Cancelar
                         </button>
                         <button
                           type="submit"
-                          className="px-2 py-0.5 text-[9px] bg-white text-black font-bold rounded cursor-pointer"
+                          className="px-3 py-1.5 text-[10px] bg-brand-purple hover:bg-brand-purple/80 text-white font-bold rounded-lg cursor-pointer transition-colors shadow-sm shadow-brand-purple/20"
                         >
                           Guardar
                         </button>
                       </div>
                     </form>
                   ) : (
-                    <>
-                      <div className="w-full space-y-3">
-                        <div className="flex justify-between items-start pb-2 border-b border-white/5">
-                          <h4 className="font-bold text-white text-sm truncate max-w-[140px] group-hover:text-brand-purple transition-all" title={project.name}>
-                            {project.name}
-                          </h4>
-                          <span className={`text-[9px] py-0.5 px-1.5 rounded font-bold border ${
+                    <div className="flex flex-col h-full justify-between relative z-10">
+                      <div className="w-full space-y-4">
+                        {/* Header */}
+                        <div className="flex justify-between items-start">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-brand-purple/20 to-brand-blue/20 border border-white/10 flex items-center justify-center flex-shrink-0 shadow-inner group-hover:scale-105 transition-transform">
+                              <Briefcase className="w-5 h-5 text-brand-purple group-hover:text-brand-blue transition-colors" />
+                            </div>
+                            <div className="overflow-hidden">
+                              <h4 className="font-bold text-white text-[15px] truncate max-w-[130px] group-hover:text-brand-purple transition-colors" title={project.name}>
+                                {project.name}
+                              </h4>
+                              <p className="text-[10px] text-gray-400 mt-0.5 flex items-center gap-1 font-medium">
+                                <Users className="w-3 h-3 text-gray-500" />
+                                {project.members.length} de {project.max_members}
+                              </p>
+                            </div>
+                          </div>
+                          <span className={`text-[9px] py-1 px-2 rounded-lg font-bold border shadow-sm uppercase tracking-wide flex-shrink-0 ${
                             project.members.length >= project.max_members
-                              ? "bg-brand-rose/10 text-brand-rose border-brand-rose/10"
-                              : "bg-white/5 text-gray-400 border-white/5"
+                              ? "bg-brand-rose/10 text-brand-rose border-brand-rose/20"
+                              : project.members.length === 0
+                                ? "bg-white/5 text-gray-400 border-white/10"
+                                : "bg-brand-emerald/10 text-brand-emerald border-brand-emerald/20"
                           }`}>
-                            {project.members.length} / {project.max_members}
+                            {project.members.length >= project.max_members ? "Lleno" : project.members.length === 0 ? "Vacío" : "Disp."}
                           </span>
                         </div>
 
                         {/* Visual Progress Bar (Ocupación) */}
-                        <div className="space-y-1">
-                          <div className="flex justify-between items-center text-[9px] text-gray-500 uppercase font-semibold">
-                            <span>Ocupación</span>
-                            <span>{fillPercentage.toFixed(0)}%</span>
+                        <div className="space-y-1.5 pt-1">
+                          <div className="flex justify-between items-center text-[10px] text-gray-400 font-medium">
+                            <span className="flex items-center gap-1.5"><Unlock className="w-3 h-3 text-gray-500" /> Ocupación</span>
+                            <span className="font-bold text-white">{fillPercentage.toFixed(0)}%</span>
                           </div>
                           <div className="w-full bg-zinc-950 rounded-full h-1 border border-white/5 overflow-hidden">
                             <div
-                              className={`h-full transition-all duration-300 ${
-                                fillPercentage === 100 ? "bg-brand-rose" : "bg-brand-purple"
+                              className={`h-full rounded-full transition-all duration-500 ease-out ${
+                                fillPercentage === 100 ? "bg-brand-rose" : "bg-gradient-to-r from-brand-purple to-brand-blue"
                               }`}
                               style={{ width: `${fillPercentage}%` }}
                             ></div>
                           </div>
                         </div>
 
-                        <div className="text-xs text-gray-400">
+                        {/* Members section */}
+                        <div className="min-h-[36px]">
                           {project.members.length === 0 ? (
-                            <p className="text-[10px] text-gray-500 italic">Grupo vacío. Haz clic para matricular alumnos.</p>
+                            <div className="flex flex-col items-center justify-center py-2.5 border border-dashed border-white/10 rounded-xl bg-white/[0.02]">
+                              <p className="text-[10px] text-gray-500 font-medium">Haz clic para matricular alumnos</p>
+                            </div>
                           ) : (
-                            <p className="text-[10px] text-gray-300 truncate">
-                              Integrantes: {project.members.map((mId) => students.find((s) => s.id === mId)?.nombre_completo).filter(Boolean).join(", ")}
-                            </p>
+                            <div className="flex flex-wrap gap-1.5">
+                              {project.members.slice(0, 3).map((mId) => {
+                                const st = students.find((s) => s.id === mId);
+                                if (!st) return null;
+                                const initials = st.nombre_completo.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+                                return (
+                                  <div key={mId} className="group/avatar relative flex items-center gap-2 bg-white/5 border border-white/10 rounded-full pr-3 p-1 hover:bg-white/10 transition-colors cursor-help shadow-sm" title={st.nombre_completo}>
+                                    <div className="w-5 h-5 rounded-full bg-gradient-to-tr from-brand-blue/30 to-brand-purple/30 text-white text-[9px] font-bold flex items-center justify-center border border-white/10 shadow-sm">
+                                      {initials}
+                                    </div>
+                                    <span className="text-[10px] text-gray-300 font-medium truncate max-w-[65px]">{st.nombre_completo.split(' ')[0]}</span>
+                                  </div>
+                                );
+                              })}
+                              {project.members.length > 3 && (
+                                <div className="flex items-center justify-center w-7 h-7 rounded-full bg-white/5 border border-white/10 text-gray-300 text-[10px] font-bold shadow-sm" title={`+${project.members.length - 3} integrantes más`}>
+                                  +{project.members.length - 3}
+                                </div>
+                              )}
+                            </div>
                           )}
                         </div>
                       </div>
 
-                      <div className="flex justify-between items-center pt-2 border-t border-white/5 w-full text-[10px]" onClick={(e) => e.stopPropagation()}>
+                      {/* Footer Actions */}
+                      <div className="flex justify-between items-center pt-3 border-t border-white/5 w-full mt-4" onClick={(e) => e.stopPropagation()}>
                         <button
                           type="button"
                           onClick={() => setCurrentView("students-list")}
-                          className="text-brand-purple font-semibold hover:underline cursor-pointer transition-all hover:text-brand-purple/80"
+                          className="flex items-center gap-1.5 px-3 py-1.5 bg-brand-purple/10 text-brand-purple hover:bg-brand-purple border border-brand-purple/20 hover:text-white rounded-lg text-[10px] font-bold transition-all shadow-sm"
                         >
-                          Administrar alumnos →
+                          <UserCheck className="w-3 h-3" />
+                          Alumnos
                         </button>
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-1">
                           <button
                             onClick={() => handleStartEditProject(project)}
-                            className="p-1 bg-white/2 border border-white/5 text-gray-400 rounded hover:text-white transition-all cursor-pointer opacity-0 group-hover:opacity-100"
+                            className="p-1.5 text-gray-500 rounded-md hover:bg-white/10 hover:text-white transition-all cursor-pointer opacity-0 group-hover:opacity-100"
                             title="Editar"
                           >
-                            <Pencil className="w-3 h-3" />
-                          </button>
-                          <button
-                            onClick={() => handleDeleteProject(project.id)}
-                            className="p-1 bg-white/2 border border-white/5 text-gray-500 rounded hover:text-brand-rose hover:border-brand-rose/25 transition-all cursor-pointer opacity-0 group-hover:opacity-100"
-                            title="Eliminar"
-                          >
-                            <Trash2 className="w-3 h-3" />
+                            <Pencil className="w-3.5 h-3.5" />
                           </button>
                           <button
                             onClick={() => handleUnenrollProject(project.id)}
-                            className="text-[9px] px-2 py-1 bg-white/2 border border-white/5 text-gray-500 rounded hover:text-brand-orange hover:border-brand-orange/25 transition-all cursor-pointer opacity-0 group-hover:opacity-100"
-                            title="Desmatricular a todos los estudiantes de este grupo"
+                            className="p-1.5 text-gray-500 rounded-md hover:bg-white/10 hover:text-brand-orange transition-all cursor-pointer opacity-0 group-hover:opacity-100"
+                            title="Desmatricular a todos"
                           >
-                            Vaciar
+                            <UserMinus className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteProject(project.id)}
+                            className="p-1.5 text-gray-500 rounded-md hover:bg-white/10 hover:text-brand-rose transition-all cursor-pointer opacity-0 group-hover:opacity-100"
+                            title="Eliminar grupo"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
                           </button>
                         </div>
                       </div>
-                    </>
+                    </div>
                   )}
                 </div>
               );
